@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+  <meta name="theme-color" content="#0C0C0C"/>
+  <title>Sobriety Toolbox</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; overflow-x: hidden; background: #0C0C0C; }
+    body { overscroll-behavior: none; position: fixed; width: 100%; }
+    #root { overflow-y: auto; height: 100dvh; }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<script>
+ function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }
+const { useState, useEffect, useRef } = React;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const DARK_C = {
+  orange:"#E8541A", og2:"#F06830", bg:"#0C0C0C", s1:"#141414", s2:"#1A1A1A",
+  s3:"#222222", border:"#282828", border2:"#323232", text:"#F0EBE3",
+  mid:"#9A9088", dim:"#525048", green:"#1E6823", gbg:"#0A1A0C",
+  proseBold:"#ffffff", stepText:"#bbbbbb", badgeBg:"#0A1A0C", badgeText:"#6aaa7a",
+};
+const LIGHT_C = {
+  orange:"#E8541A", og2:"#D44010", bg:"#FAFAF8", s1:"#F2EFE9", s2:"#EAE6DF",
+  s3:"#E0DBD3", border:"#D8D2CA", border2:"#CCC6BC", text:"#1A1814",
+  mid:"#6B6560", dim:"#A09890", green:"#1E6823", gbg:"#EAF2EB",
+  proseBold:"#0C0A08", stepText:"#3A3530", badgeBg:"#EAF2EB", badgeText:"#1E6823",
+};
+// C is set at runtime based on theme prop — see App component
+const C = DARK_C; // default, overridden per component
+
+const PILLARS = ["Identity","Clarity","Discipline","Purpose","Connection","Freedom"];
+const PILLAR_COLORS = {
+  Foundation:"#5A4A3A", Identity:"#8B2020", Clarity:"#1A4A6B",
+  Discipline:"#1E6823", Purpose:"#7D6608", Connection:"#6C3483", Freedom:"#2E4057"
+};
+
+const ToolboxIcon = ({ size = 28 }) => (
+  React.createElement('svg', { width: size, height: size*0.85, viewBox: "0 0 28 24"   , fill: "none",}
+    , React.createElement('rect', { x: "1", y: "10", width: "26", height: "13", rx: "1", stroke: "white", strokeWidth: "1.6",})
+    , React.createElement('path', { d: "M8.5 10V6C8.5 5.17 9.17 4.5 10 4.5h8C18.83 4.5 19.5 5.17 19.5 6v4"           , stroke: "white", strokeWidth: "1.6",})
+    , React.createElement('line', { x1: "5", y1: "4.5", x2: "5", y2: "10", stroke: "white", strokeWidth: "1.4", strokeLinecap: "round",})
+    , React.createElement('line', { x1: "23", y1: "4.5", x2: "23", y2: "10", stroke: "white", strokeWidth: "1.4", strokeLinecap: "round",})
+    , React.createElement('line', { x1: "14", y1: "14", x2: "14", y2: "20", stroke: "white", strokeWidth: "1.4", strokeLinecap: "round",})
+    , React.createElement('line', { x1: "11", y1: "17", x2: "17", y2: "17", stroke: "white", strokeWidth: "1.4", strokeLinecap: "round",})
+  )
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 30-DAY SOBRIETY GUIDE DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const DAYS = [
+  {day:1,pillar:"Foundation",pillarColor:"#5A4A3A",en:{title:"Why You're Here",opener:"You didn't open this app by accident. Something brought you here — a decision, a moment, a version of yourself you're tired of. That's enough. Let's start there.",lesson:`Most people who struggle with alcohol don't think of themselves as having a problem. They think everyone drinks like this. They think they could stop if they really wanted to. They think it's just how they unwind.\n\nAnd maybe some of that is true. But here's what's also true: you're here. Reading this. At whatever hour this is, in whatever situation you're in.\n\nThat means something shifted. Something in you said: this isn't working.\n\nThis guide is not going to diagnose you. It's not going to tell you you're an alcoholic or put a label on you. That's not what this is.\n\nWhat this is: 30 days of education, reflection, and action. It's designed to help you understand yourself better — your patterns, your triggers, your identity, your purpose — so that whatever decision you make going forward, you make it from a position of clarity, not confusion.\n\n**The decision is always yours. This guide just makes sure you're making it with your eyes open.**\n\nSome days will be uncomfortable. That's not a malfunction. That's the work. Those who get something out of this are the ones who show up on the uncomfortable days too.\n\nYou don't have to be ready. You just have to be here.`,reflection:"Why did you actually open this? Not the surface answer — the real one. What are you tired of?",activity:{title:"Write Your Honest Why",steps:["Open your notes app or grab a pen. Write for 5 minutes uninterrupted.","Finish this sentence as many times as you can: 'I'm here because ___.'","Don't filter it. Don't make it sound good. Write what's actually true.","Read it back. Underline the one sentence that hits hardest.","That sentence is your anchor for the next 30 days. Keep it somewhere you'll see it."]},closer:"Tomorrow we go deeper. You don't need to feel anything in particular tonight. Just know that showing up today counted."}},
+  {day:2,pillar:"Foundation",pillarColor:"#5A4A3A",en:{title:"What This Is — And What It Isn't",opener:"Before we go any further, let's be straight about what you've signed up for.",lesson:`This is not a 12-step program. No sponsor. No meetings. No requirement to stand up in a room and say "I am an alcoholic."\n\nThis is not therapy. No diagnosis. No prescription.\n\nThis is not a detox plan. If you're physically dependent on alcohol, you need medical support — this program doesn't replace it.\n\n**What this is:**\n\nA 30-day education in yourself. Six pillars. Identity. Clarity. Discipline. Purpose. Connection. Freedom.\n\nEach pillar is a lens for understanding why alcohol has had the role it's had. Not to blame you. Not to fix you. To equip you.\n\nThe philosophy: people who understand themselves make better decisions. Full stop.\n\nYou don't need to commit to anything beyond today. The decision will emerge from the work — if you do the work.\n\n**Those who get the most from this are not the ones who were ready. They're the ones who kept going anyway.**`,reflection:"What are you actually willing to commit to for the next 30 days? Be honest — not aspirational.",activity:{title:"Set Your Commitment",steps:["Write down the specific time of day you'll do this program. Be exact.","Write what you'll do on the days you don't feel like it. Because those days are coming.","Tell one person you trust that you're doing something for yourself for the next 30 days.","Set a daily reminder on your phone for your chosen time.","That's your commitment made. Simple. Real."]},closer:"Tomorrow we start the real work. First pillar: Identity. Who are you without the drink?"}},
+  {day:3,pillar:"Foundation",pillarColor:"#5A4A3A",en:{title:"The Substitution Trap",opener:"Before the pillars begin — one concept you need to carry through all 30 days. It could save you years.",lesson:`Here's what most sobriety programs never tell you:\n\nYou can stop drinking and still not be free.\n\nThis is called the substitution trap. When someone removes alcohol without dealing with what was underneath — the shame, the boredom, the anxiety — the brain doesn't stop needing an escape. It just finds a new one.\n\nWork. Pornography. Food. Rage. Gambling. These aren't always problems. But when they start doing the same job alcohol was doing — numbing, escaping — you haven't gotten free. You've just changed rooms in the same prison.\n\n**The six pillars are not about quitting drinking. They are about understanding yourself deeply enough that the drink stops being necessary.**\n\nSober and free are not the same thing. This guide is trying to get you to free.`,reflection:"Outside of alcohol — what else do you use to escape or numb? Work? Food? Anger? Phone? Be completely honest.",activity:{title:"Map Your Other Escapes",steps:["List every escape mechanism you use — not just alcohol.","For each one, rate it: Has this increased recently? (Yes / No / Maybe)","Circle the ones marked Yes.","For each circled item, write: 'When I do this, I'm usually avoiding the feeling of ___.'","This is your substitution map. You'll come back to it at Day 27."]},closer:"Foundation is done. Tomorrow: Identity. Who are you when nobody's watching?"}},
+  {day:4,pillar:"Identity",pillarColor:"#8B2020",en:{title:"The Job Alcohol Was Doing",opener:"Identity week starts today. This is the heaviest pillar. Don't rush it.",lesson:`Alcohol doesn't show up in your life randomly. It gets hired.\n\nSomething in your life needed doing — relief, confidence, belonging, numbness — and alcohol applied for the job. And it got it, because it worked. At least at first.\n\nFor some, it was the social lubricant. The thing that made conversation easy. For others, the painkiller. The thing that turned off the noise after a hard day.\n\nFor many, it became the identity itself. "I'm the guy who can hold his drink." It was how people knew them. How they knew themselves.\n\n**None of this is weakness. This is human. The problem is not that you found something that worked. The problem is that it started running the show.**\n\nRemoving alcohol without understanding the job it was doing leaves a gap. And something will fill that gap. The question this week: what are you going to put there instead?`,reflection:"What was the first 'job' alcohol did for you? Social ease? Pain relief? Belonging? Be specific about when it started working for you.",activity:{title:"The Job Description",steps:["Write at the top: 'Alcohol was hired to do the following job for me:'","Then write everything. All the jobs. The social one. The emotional one. Don't judge any of it.","Now write: 'The version of me that needed those jobs done was someone who ___.'","Ask yourself: Does that version still exist? Do those jobs still need doing?","Keep this. You'll need it at the end of the week."]},closer:"You started the hardest pillar today. Tomorrow we go deeper."}},
+  {day:5,pillar:"Identity",pillarColor:"#8B2020",en:{title:"Stripping the Label",opener:"Yesterday you looked at what alcohol was doing. Today we look at what it was covering.",lesson:`Most recovery programs trade one label for another. You stop being "the guy who drinks" and become "the recovering alcoholic." Your identity is still organized around alcohol — just in the opposite direction.\n\nThat's still outsourcing who you are.\n\nThe work of this pillar is not to become the sober person. It's to become yourself — fully. With all the complexity, contradictions, and capacity that's always been there.\n\nYour identity should be built around what you value, what you're building, who you're responsible for — not around what you do or don't consume.\n\n**That version of you — the one underneath all the noise — is what this week is about.**`,reflection:"If you removed every label connected to alcohol — drinker, non-drinker, recovering, sober — who are you? What actually defines you?",activity:{title:"Build the Real You",steps:["Write 10 things you value — things that matter regardless of whether you drink.","Write 5 things you're responsible for.","Write 3 things you're building — even if they're just ideas.","Look at that list. That's closer to who you actually are than any label.","Write one sentence: 'I am someone who ___.' Not about sobriety. About who you are."]},closer:"The label starts to loosen when you have something to replace it with."}},
+  {day:6,pillar:"Identity",pillarColor:"#8B2020",en:{title:"The Performance",opener:"Today we talk about something most people carry but almost none talk about: the exhaustion of performing.",lesson:`There's a version of you that shows up for the world. Capable. Composed. Handling it. Strong enough for everyone else.\n\nAnd then there's the real version.\n\nMost people have a significant gap between those two versions. The performance of the first one is exhausting. And alcohol was one of the few places that gap closed.\n\nWhat this guide isn't going to ask you to do: expose yourself or perform vulnerability for an audience. That's just a different kind of performance.\n\nWhat it is going to ask: find at least one context where the performance is not required. Where you can just exist, doing the work of your life.\n\n**The work this week is not just understanding your identity. It's giving your real self somewhere to exist.**`,reflection:"What version of yourself are you most tired of performing? Where does the mask feel heaviest?",activity:{title:"Drop the Performance — For 10 Minutes",steps:["Find somewhere private. Phone face down. 10 minutes.","Write without performing. No good sentences. No structure. Just what's actually true right now.","Start with: 'The thing I'm most tired of pretending is ___.'","Keep writing. Let it get messy. That's the point.","When 10 minutes is up, don't read it back yet. Just close it."]},closer:"Performance is exhausting. You just got 10 minutes off."}},
+  {day:7,pillar:"Identity",pillarColor:"#8B2020",en:{title:"Who You Were Before",opener:"Four days into the hardest pillar. Today we go back — before the habit formed.",lesson:`Before alcohol became regular, there was a version of you with a particular way of moving through the world. With things you were interested in. Things that gave you energy without needing a substance.\n\nThat version didn't disappear. It got quieter. Buried under years of coping, performing, numbing. But it's still there.\n\n**Identity work in recovery is archaeology, not architecture.**\n\nYou're not constructing something new. You're carefully removing what covered the original — until you get back to what was actually there.\n\nWhat was there? What did you care about before the habit took over?`,reflection:"Who were you at 18 or 20 — before the drinking became a habit? What did you care about?",activity:{title:"Archaeological Dig",steps:["Think back to before the drinking habit formed. Write about who you were.","What were you interested in? What made you feel capable and alive?","What did you want your life to look like back then?","Which of those things are still available to you? Which did you abandon?","Pick one thing you want to reclaim. Write what a small version of reclaiming it looks like."]},closer:"That version of you isn't new. It's been there. Tomorrow we figure out what it needs."}},
+  {day:8,pillar:"Identity",pillarColor:"#8B2020",en:{title:"Identity Week: Integration",opener:"Last day of Identity week. Today we bring it together.",lesson:`This week you've done hard work: you looked at the job alcohol was doing, started stripping the labels, examined the performance, went back and found who you were before.\n\nFive days of looking at yourself honestly. Most people never do that once.\n\nIdentity doesn't change in a week. But it can start changing — with the right questions, the right honesty, and the right daily practice.\n\n**You've started that process. Next week, we get into Clarity — understanding your patterns so you can actually interrupt them.**`,reflection:"After this week — what's the most honest thing you can say about who you are right now?",activity:{title:"Identity Statement — Current Draft",steps:["Review everything you wrote this week. Take 5 minutes.","Write 'I am someone who ___' — complete it 5 times. Each one should be true right now.","Pick the one that feels most honest and most uncomfortable. That's the real one.","Write it somewhere permanent. You'll revisit it at Day 30.","Identity week is done. Rest in that."]},closer:"Next week: Clarity. Now we look at what drives your patterns — and how to interrupt them."}},
+  {day:9,pillar:"Clarity",pillarColor:"#1A4A6B",en:{title:"How the Loop Works",opener:"Clarity week. This week is about patterns. Your patterns. Not theory — yours.",lesson:`Your brain builds habits by connecting a trigger to a behavior to a feeling. The habit loop: Cue → Routine → Reward.\n\nAlcohol hijacked this loop. The cue might be stress from work. The routine: pour a drink. The reward: the chemical release — dopamine, then GABA — that feels like relief.\n\nBut the relief is real. The brain genuinely experiences it as relief. That's not weakness — that's chemistry.\n\nThe problem is the loop runs on autopilot. By the time you're in the middle of a craving, your rational decision-making center is already partially offline.\n\n**The only way to interrupt an automatic response is to make it conscious before it triggers. That's what this week is about.**\n\nThat choice point — between cue and routine — is where freedom lives.`,reflection:"Think about the last time you drank or had a strong urge. What was the cue? What feeling were you seeking?",activity:{title:"Map One Loop",steps:["Pick one specific drinking situation you can picture clearly.","Write the CUE: what was happening right before? Time, location, emotion.","Write the ROUTINE: the exact behavior, step by step.","Write the REWARD: what feeling did your brain expect?","Now ask: 'What other routine could deliver a similar reward without the cost?' Write two ideas."]},closer:"One loop mapped. Tomorrow: the full landscape."}},
+  {day:10,pillar:"Clarity",pillarColor:"#1A4A6B",en:{title:"Your Trigger Landscape",opener:"Yesterday: one loop. Today: the full landscape.",lesson:`Most people can name one trigger: stress. But stress is a category, not a trigger.\n\nBeyond emotional triggers, there are:\n\n**Environmental triggers** — places, times of day, routes home. The bar on the corner. Friday at 5pm.\n\n**Social triggers** — specific people, specific dynamics. The friend group where it's expected.\n\n**Internal triggers** — thoughts, memories, physical sensations. The restlessness in your body.\n\nEveryone has a trigger landscape — a map of situations, feelings, people, and places that reliably activate his craving.\n\nMost people have never mapped it. They just keep walking through it blind.`,reflection:"Outside of stress — what are your other triggers? Which people, places, times, feelings?",activity:{title:"Trigger Landscape Map",steps:["Draw four columns: EMOTIONAL / ENVIRONMENTAL / SOCIAL / INTERNAL","Fill each column with every trigger you can identify. Be specific.","Circle the top 3 most powerful ones.","For each, write: 'When this triggers me, what I'm actually craving is ___ (feeling, not substance).'","Keep this map. You'll use it for the rest of the program."]},closer:"You've mapped the landscape. Tomorrow: the belief underneath each trigger."}},
+  {day:11,pillar:"Clarity",pillarColor:"#1A4A6B",en:{title:"The Belief Underneath",opener:"Surface triggers are real. But there's always something deeper.",lesson:`Here's something most people never figure out: the trigger is not the situation. The trigger is the belief that activates when you're in that situation.\n\n"I drink when I'm stressed" really means: "When I feel stressed, I believe I cannot handle it on my own."\n\n"I drink when things are quiet" really means: "When things are quiet, I believe what I'll find in the silence is something I can't face."\n\n**The trigger pulls the lever. But it's the belief that activates the craving.**\n\nYou can remove every surface trigger and still relapse — because the belief is still there. The work of this program is to update the belief through accumulated evidence.`,reflection:"Pick your strongest trigger. What is the underlying belief it activates?",activity:{title:"Belief Extraction",steps:["Take your #1 trigger from yesterday's map.","Complete: 'When [trigger] happens, I feel [emotion]. When I feel that, I believe I am [belief about myself].'","Ask: 'Where did I first start believing that? When did that belief form?'","Ask: 'Is that belief actually true? What evidence do I have that it isn't?'","Write one piece of counter-evidence — one moment you handled something hard without needing to numb it."]},closer:"The belief is the real work. You've started it."}},
+  {day:12,pillar:"Clarity",pillarColor:"#1A4A6B",en:{title:"Building Your Interrupt",opener:"You've mapped your triggers. You've identified your beliefs. Today we build the interrupt.",lesson:`An interrupt is a pre-committed response to a specific trigger — designed before the moment arrives.\n\nThe reason: under stress, your rational brain goes partially offline. Your autopilot takes over. By the time a craving activates, you don't have full access to rational decision-making.\n\nSo you have to make the rational decision in advance and install it as a new automatic response.\n\nStructure: **If [cue], then [specific action].**\n\n"If it's 6pm and I walk through the door after a hard day, I will immediately change my clothes, go to the kitchen, and make tea before I do anything else."\n\nSpecific. Executable. An interrupt.\n\n**You are not breaking a habit. You are installing a new one on top of it.**`,reflection:"For your top trigger — what specific, executable interrupt could you install?",activity:{title:"Design Your Interrupt",steps:["Take your top 3 triggers from Day 10.","For each, write an If-Then plan: 'If [specific trigger], then I will [specific immediate action].'","The action should: take less than 2 minutes to start, be doable wherever you are.","Write the three interrupts somewhere visible.","Practice one tonight — even without a trigger."]},closer:"The interrupt is installed. Tomorrow: the last day of Clarity week."}},
+  {day:13,pillar:"Clarity",pillarColor:"#1A4A6B",en:{title:"Clarity Week: Integration",opener:"Five days of Clarity. You've built something real. Today we lock it in.",lesson:`This week you mapped the habit loop, built your trigger landscape, dug into the belief underneath the trigger, and designed your interrupt.\n\n**Your patterns are not random and they are not who you are.** They are learned responses to real triggers, organized around real beliefs. They can be understood. And what can be understood can be interrupted.\n\nYou are not your patterns. You are the man underneath them, doing the work of changing them.\n\nNext: Discipline. Understanding the pattern isn't enough. You need systems that hold you when motivation disappears.`,reflection:"What did you learn about yourself this week that you didn't fully know before?",activity:{title:"Clarity Week Summary",steps:["Write your single most powerful trigger.","Write the belief underneath it.","Write your interrupt for it.","Write: 'The pattern I'm most committed to interrupting in the next 17 days is ___.'","Read it. Sign it if you want. That's a commitment to yourself."]},closer:"Clarity done. Next week: Discipline."}},
+  {day:14,pillar:"Discipline",pillarColor:"#1E6823",en:{title:"Why Willpower Always Loses",opener:"Discipline week. This is where most people think the work is. It's not — but it's where the structure gets built.",lesson:`Everyone who has tried to stop drinking has tried willpower. And most have experienced this: it works for a while. Then it doesn't.\n\nWillpower is a cognitive resource — and it depletes. Every decision draws from the same pool. By evening, when your defenses are lowest, your tank is nearly empty.\n\n**Discipline is not about forcing yourself through hard moments. Discipline is about designing your life so the hard moments are less frequent and less intense.**\n\nThe difference between those who stay sober and those who keep relapsing is not strength of character. It's architecture of daily life.`,reflection:"Where in your daily life is willpower the only thing standing between you and the bottle?",activity:{title:"Willpower Audit",steps:["Map your day from wake to sleep. Identify the 3 highest-risk windows.","For each: 'What structure do I currently have here? What happens naturally that could lead to drinking?'","Write what's missing — not what you wish you felt, but what structure isn't there.","Pick the highest-risk window. That's where you focus this week.","Write one concrete change you could make that doesn't require willpower."]},closer:"You've found the gap. This week we fill it — with structure, not effort."}},
+  {day:15,pillar:"Discipline",pillarColor:"#1E6823",en:{title:"One Non-Negotiable",opener:"Yesterday you found the gap. Today you start filling it — with the smallest possible thing.",lesson:`Most people do this wrong when they decide to change: they try to change everything at once.\n\nThis fails. The cognitive load of managing multiple new behaviors simultaneously is too high.\n\nOne small behavior, practiced consistently, creates stronger neural pathways than multiple behaviors practiced inconsistently.\n\n**One thing. Every day. No exceptions.**\n\nThree criteria — each one non-negotiable:\n\n1. Small enough to do on your absolute worst day. If you can't do it sick and exhausted, it's too big.\n2. Immediate and specific. "10 push-ups after waking" — not "exercise more." Time and action both named.\n3. Not directly about alcohol. This builds evidence that you keep commitments to yourself — any commitment.\n\nEvery time you do it, you cast a vote for who you're becoming.`,reflection:"What one daily behavior — small enough for your worst day — could you commit to for the remaining 16 days?",activity:{title:"Install Your Non-Negotiable",steps:["Choose your one daily practice. Test it: small enough for worst day, immediate and specific, not directly about alcohol.","Write: 'Every day, at [specific time], I will [specific action]. It takes [X minutes].'","Do it today. Right now if you can.","Track it somewhere visible.","This is the one thing that holds the rest of the structure together."]},closer:"One non-negotiable installed. Tomorrow we build the daily architecture around it."}},
+  {day:16,pillar:"Discipline",pillarColor:"#1E6823",en:{title:"Environment Design",opener:"You've built the internal structure. Today we build the external one.",lesson:`Your environment is making decisions for you.\n\nThe bottle on the counter is a decision. The route home that passes the bar is a decision. The empty evening with no plan is a decision.\n\n**Environment design is the practice of deliberately restructuring your environment so that the gravitational pull works in your favor, not against you.**\n\nIt is easier to not drink if alcohol is not in the house. That's not a revelation — but how many people actually remove it?\n\nSmall structural changes. Individually almost too simple. Collectively, they reduce the daily demand on willpower significantly.\n\nLess demand on willpower = more capacity for decisions that matter.`,reflection:"What in your environment is currently set up in a way that makes drinking easier?",activity:{title:"Redesign One Environment",steps:["Pick your highest-risk environment.","Write 3 specific physical changes that would add friction to drinking.","Write 3 physical changes that would make an alternative behavior easier.","Implement at least one of each — today, before you sleep.","This is not about perfection. Making the right choice 10% easier and the wrong choice 10% harder."]},closer:"The environment is starting to work with you. Tomorrow: the morning structure."}},
+  {day:17,pillar:"Discipline",pillarColor:"#1E6823",en:{title:"The Morning That Sets the Day",opener:"How you start your day determines a surprising amount about how it ends.",lesson:`The first hour after waking is when your prefrontal cortex is most available. Your willpower tank is full.\n\nWhat most people do with that hour: check their phone, scroll, react to whatever is pulling for their attention. By the time they've been reactive for 30 minutes, they've depleted the cognitive resource that was most available.\n\n**A morning routine is not a productivity hack. It is a way of starting every day on your terms, not the world's terms.**\n\nIn this work, the morning routine signals to your nervous system: you are the one in charge of your day. Not the craving. Not the trigger. Not the autopilot.\n\nThree things, done in the same order, before the phone comes out. That's enough.`,reflection:"What does your current morning look like? Does it set you up or put you immediately in reactive mode?",activity:{title:"Build Your Morning Sequence",steps:["Write your current first 30 minutes after waking. Be honest about what actually happens.","Now design what it could look like — 3 things, in order, before you check your phone. Under 15 minutes total.","The three things should be physical, intentional, and repeatable.","Do this sequence tomorrow morning. Set a reminder tonight.","The morning sequence is the first act of every day being yours."]},closer:"One more day of Discipline. Tomorrow we put it all together."}},
+  {day:18,pillar:"Discipline",pillarColor:"#1E6823",en:{title:"Discipline Week: Integration",opener:"Five days of Discipline. You've built real structure. Today we integrate it.",lesson:`Discipline week was not about restriction. It was about design.\n\nYou identified where willpower was your only defense — and started replacing it with structure. You installed a non-negotiable. Redesigned your environment. Built a morning sequence.\n\nDiscipline is the scaffolding, not the building. The building is identity, purpose, connection, freedom. Discipline holds the structure in place while you build it.\n\n**You're not restricting yourself. You're designing your life around your values.**\n\nNext: Purpose. You understand yourself. You have structure. Now we find the direction.`,reflection:"Where do you feel the structure starting to hold? Where are the gaps that still need work?",activity:{title:"Discipline Week Summary",steps:["Write your one non-negotiable. Confirm you did it today.","Write the one environmental change you made.","Write your morning sequence (3 steps, in order).","Write one gap that still needs structure.","That gap is your next target."]},closer:"Discipline done. Next: Purpose. You've got the structure. Now we give it a direction."}},
+  {day:19,pillar:"Purpose",pillarColor:"#7D6608",en:{title:"The Vacuum You Created",opener:"Purpose week. This is where most people discover why sobriety feels hollow — and what to do about it.",lesson:`When someone removes alcohol without filling the space with something meaningful, a vacuum forms. Nature abhors a vacuum. Something fills it.\n\nFor many, it's work. They become workaholics — the adrenaline of busyness replacing the chemical release of alcohol. "Sober" but running on a different fuel doing the same job.\n\nThis is the substitution trap from Day 3.\n\n**Purpose is not a grand vision. It's the answer to a simpler question: What am I building, and why does it matter today?**\n\nThat answer — even small and honest — changes the neuroscience. It activates the prefrontal cortex. It makes the craving less compelling because there's something more compelling in its place.`,reflection:"Right now — what are you building? Not eventually. What are you actually building with your time and energy today?",activity:{title:"The Vacuum Audit",steps:["Estimate: how many hours per week did drinking (and recovering) consume?","What have you done with those hours since reducing or stopping? Be honest.","What would you do with those hours if fully honest about what you want?","Circle one that genuinely excites you.","Write the smallest version of that thing you could start this week."]},closer:"You've identified the vacuum. Tomorrow we start filling it."}},
+  {day:20,pillar:"Purpose",pillarColor:"#7D6608",en:{title:"Finding Your North Star",opener:"Yesterday: the vacuum. Today: what fills it.",lesson:`Thomas Sankara became president of Burkina Faso at 33. He inherited one of the poorest countries on earth, surrounded by enemies, with no powerful allies. He had every reason to compromise, slow down, or stop.\n\nHe didn't. And when asked why he kept going under conditions most people would have walked away from, his answer was always the same: he knew exactly what he was building and who it was for. The why was so clear it made the suffering secondary.\n\nHe was assassinated in 1987. But the reason his name still carries weight across a continent is that he showed what a person can endure when purpose is real and not borrowed.\n\nA person can endure almost any suffering if they have a clear answer to "why."\n\nOn the days when this is hard — when the trigger is loud — the thing that keeps you in the game is a clear, personal answer to why it matters.\n\nNot a slogan. Not someone else's answer.\n\n**Your answer. Your North Star.**\n\nOne sentence. It just has to be true right now and it has to be yours.`,reflection:"Write your most honest answer to: 'Why does this work actually matter to me? Not to anyone else. To me, specifically.'",activity:{title:"Write Your North Star",steps:["Set a timer for 10 minutes. Write without stopping about what your life looks like in 3 years if you complete this work fully.","Now write what your life looks like in 3 years if nothing fundamentally changes.","Read both. What do you refuse to let happen?","Turn that refusal into a positive statement: 'I am doing this because ___.' Under 20 words.","Write it somewhere you'll see it on hard days."]},closer:"The North Star is set. Tomorrow: making it operational."}},
+  {day:21,pillar:"Purpose",pillarColor:"#7D6608",en:{title:"Purpose into Practice",opener:"A North Star is useless if you can't see it from where you're standing.",lesson:`Most people who find purpose make one of two mistakes.\n\n**Mistake one:** The purpose is too abstract. "Be a better person" is real and good. But on a Tuesday night when the trigger is loud, it doesn't tell you what to do with your hands.\n\n**Mistake two:** The purpose is someone else's — borrowed and never tested under pressure. When things get hard, borrowed purposes collapse.\n\nPurpose needs to be translated into daily life. Not as grand gestures. As specific, regular, small actions that express that purpose.\n\n**The daily action IS the purpose made real.**\n\nYou don't need to feel the purpose every day. You just need to do the action.`,reflection:"Take your North Star. What one specific daily action points directly toward it?",activity:{title:"Purpose into Action",steps:["Write your North Star at the top of the page.","Write 5 specific daily actions that would express that purpose concretely.","Pick one. That's your purpose action — the thing you do every day that makes the direction real.","Add it to your daily structure alongside your non-negotiable from Discipline week.","Do it today."]},closer:"Purpose is operational. Tomorrow: what you're protecting."}},
+  {day:22,pillar:"Purpose",pillarColor:"#7D6608",en:{title:"What You're Protecting",opener:"Last day of Purpose week. Today we get concrete about what's at stake.",lesson:`Purpose has two directions: what you're building toward, and what you're protecting.\n\nOn the hardest days — when the craving is loudest — what often holds a person in place is the second one.\n\nMaybe it's a child. The presence you can or cannot offer them. Maybe it's a relationship. Maybe it's your own future — what you'll be able to do at 50 or 60.\n\n**What are you not willing to lose?**\n\nThat question, answered honestly, is one of the most powerful motivators available. And it doesn't require a good day to access. On a bad day, you can still ask: what am I not willing to lose?\n\nThat answer will hold when the positive vision doesn't.`,reflection:"What are you protecting? Not what you're building — what are you not willing to lose?",activity:{title:"What You're Protecting",steps:["Write: 'I am not willing to lose ___.' Complete it at least 5 times. Be specific.","For each, write one concrete consequence of losing it if nothing changes.","Circle the one that hits hardest. That's your protection motive.","Write it alongside your North Star. These two are your purpose anchors.","Come back to these on Day 30."]},closer:"Purpose week done. Next: Connection."}},
+  {day:23,pillar:"Connection",pillarColor:"#6C3483",en:{title:"Why Isolation Is the Enemy",opener:"Connection week. This is the pillar most people resist most. And the one that changes the most.",lesson:`Bruce Alexander's Rat Park experiment changed how scientists understand addiction. Isolated rats given heroin became compulsive users. Rats in an enriched social environment used it occasionally but showed no compulsive pattern.\n\nThe variable was not the drug. The variable was isolation versus connection.\n\nJohann Hari's conclusion: "The opposite of addiction is not sobriety. It's connection."\n\nThis is neurochemistry. Oxytocin — released through genuine connection — directly downregulates the dopamine craving circuits. Social isolation upregulates them.\n\n**Isolation is not just uncomfortable. It is biologically dangerous for anyone doing this work.**\n\nConnection doesn't mean meetings or performing vulnerability. It means one real relationship where you don't have to perform.\n\nOne is enough to change the chemistry.`,reflection:"How much of your life right now is spent in genuine connection — where you're not performing, just being real?",activity:{title:"Connection Audit",steps:["Draw three circles. Label them Inner, Middle, Outer.","Inner = people who know the real you. Write names.","Middle = people you respect but keep at emotional arm's length.","Outer = acquaintances, colleagues.","Is anyone in the inner circle? When did you last be real with them?"]},closer:"You've mapped your connection landscape. Tomorrow: what to do with it."}},
+  {day:24,pillar:"Connection",pillarColor:"#6C3483",en:{title:"One Real Conversation",opener:"You've mapped the landscape. Today you do something with it.",lesson:`The reason most people don't open up is not lack of trust. It's lack of practice.\n\nAcross cultures and genders, most of us are taught — in different ways — to manage alone. Don't burden others. Stay composed. Handle it. By the time we're in our 30s or 40s, we may not have had a genuinely honest conversation with anyone in years.\n\nThis isn't a gender issue. It's a human one. The performance looks different depending on who you are — but almost everyone is performing something.\n\n**I'm not asking you to be vulnerable. I'm asking you to have one real conversation.**\n\nOne conversation where you drop the performance. Where you say something true that you haven't said before. It doesn't have to be about sobriety. It just has to be real.\n\nAnd here's what usually happens: the other person exhales. Because almost everyone is performing too. The moment one person drops it, it gives the other permission to do the same.`,reflection:"Who in your life is most likely to handle a real conversation — without judgment, without trying to fix it?",activity:{title:"The One Real Conversation",steps:["Identify the person.","Decide what you'll say — one true thing you haven't said before. Doesn't have to be big. Just real.","Have the conversation this week. Not eventually. This week.","After: write what happened. What shifted?","If you genuinely can't identify one person — that's the data. Write why. That's the next work."]},closer:"One real conversation. That's this week's most important task."}},
+  {day:25,pillar:"Connection",pillarColor:"#6C3483",en:{title:"The People Around You",opener:"Two days into Connection week. Today we zoom out.",lesson:`You are shaped by the people you spend time with. Mirror neurons cause us to unconsciously adopt the behaviors and patterns of the people we're around most.\n\nIf you spend most of your time around people who drink heavily, whose solution to difficulty is numbing — you are swimming upstream. Not impossible, but harder.\n\nIf you spend time around people who are building something, who take their state seriously — the current works with you.\n\nThis is not about judging your friends. It's about being honest about the environment you're living in.\n\n**The goal is to be connected to people who support who you're becoming — not who you're trying to leave behind.**`,reflection:"Look at the people you spend the most time with. What behaviors do they model? What does that cost you?",activity:{title:"Ecosystem Audit",steps:["Write the names of the 5 people you spend the most time with.","For each: write one behavior or pattern they consistently model.","Honestly assess: does each person support or challenge the direction you're building toward?","Identify one relationship you want to invest more in.","Identify one environment you need to spend less time in — not permanently, just strategically."]},closer:"You've looked at the ecosystem. Tomorrow: Connection week integration."}},
+  {day:26,pillar:"Connection",pillarColor:"#6C3483",en:{title:"Connection Week: Integration",opener:"Four days of Connection. Today we lock in what you've built.",lesson:`Here's what most people discover this week: the loneliness was there before the drinking. The drinking just managed it.\n\nConnection work is not about finding people who support your sobriety. It's about building a life where you're genuinely known.\n\n**You are not built to do this alone. Nobody is.**\n\nAnd asking for real connection is not weakness. It's one of the most structurally sound decisions you can make.\n\nAs you move into Freedom — the final pillar — carry this: the person who gets free is not the one who white-knuckled it alone. They stayed in connection while doing the hard work.`,reflection:"Is there one person who now knows more of the real you than 4 days ago? What changed? If no — what stopped you?",activity:{title:"Connection Week Summary",steps:["Write the name of the person in your inner circle.","Write one honest thing you said (or will say) this week that you normally would have kept back.","Write one relationship you're investing in and what that looks like concretely.","Write one environment you're spending less time in and why.","That's your connection architecture. Keep building it."]},closer:"Connection done. Last pillar: Freedom. Four days. The most important ones."}},
+  {day:27,pillar:"Freedom",pillarColor:"#2E4057",en:{title:"Sober vs. Free",opener:"Final pillar. Four days. The most important distinction in this entire program.",lesson:`Go back to Day 3. You mapped your escapes — all of them.\n\nLook at that list now. What's changed? What's increased?\n\nThis is the substitution trap in action.\n\n**Sober and free are not the same thing.**\n\nSober means the alcohol is gone.\n\nFree means you've addressed the root — the wound, the belief, the avoidance pattern — that made escape necessary in the first place.\n\nFree means you can sit in a room with your own thoughts and not need to leave.\n\nFree means you can feel stress, loneliness, shame, anger — and stay present with those feelings without immediately reaching for something.\n\nThis is hard. It's the hardest part of the work. It's also what makes the difference between someone who quits for a few months and someone who is genuinely different.`,reflection:"Look at your Day 3 map. What's changed? What substitutes are you currently running?",activity:{title:"Substitution Check",steps:["Pull out or rewrite your Day 3 escape map.","For each escape, rate the current frequency: More than before / Same / Less / Gone.","Circle anything that's 'More than before.' Those are your current substitutes.","For each: 'When I do this, the feeling I'm avoiding is ___.'","Write the feeling. Don't judge it. Just name it. That naming is the beginning of freedom."]},closer:"You've looked at the substitutes. Tomorrow: what to do about them."}},
+  {day:28,pillar:"Freedom",pillarColor:"#2E4057",en:{title:"Sitting With It",opener:"The hardest skill in this work. The one that makes everything else possible.",lesson:`Distress tolerance: the capacity to experience uncomfortable emotions without immediately acting to relieve them.\n\nMost people have very low distress tolerance. Not because they're weak — because they were never taught how to develop it.\n\nHere's what happens when someone begins to develop it:\n\nThe craving comes. You notice it. You don't act immediately. You stay with it — 60 seconds, 5 minutes. The craving passes. Because cravings are waves, not permanent states.\n\nOver weeks, two things happen:\n1. The capacity to tolerate discomfort increases.\n2. The brain learns that discomfort will pass — it doesn't require action to survive.\n\n**You cannot think your way to distress tolerance. You have to practice it.**\n\n10 minutes. Next time a craving arrives — don't act on it for 10 minutes. Just stay with it. Most cravings peak within 20 minutes and subside.`,reflection:"When was the last time you sat with an uncomfortable feeling without immediately reaching for something?",activity:{title:"Practice Distress Tolerance",steps:["Today, identify one moment of genuine emotional discomfort.","When it arrives: don't act on it for 10 minutes. Set a timer.","During 10 minutes: breathe normally. Notice where you feel it in your body. Name the emotion.","After 10 minutes: write what happened. Did it intensify? Did it pass?","You just practiced freedom. One minute at a time."]},closer:"That practice — repeated — is how freedom is built."}},
+  {day:29,pillar:"Freedom",pillarColor:"#2E4057",en:{title:"What Freedom Actually Looks Like",opener:"One day from the end. Today we define the destination.",lesson:`Freedom is not the absence of craving. People who have done years of this work still have moments when the trigger hits and the pull is real.\n\nFreedom is not the absence of difficulty. Hard days still happen.\n\n**Freedom is the capacity to face those things without needing to escape from them.**\n\nIt's a Tuesday evening when everything is difficult — and instead of reaching for the escape hatch, you feel it. You breathe. You talk to someone. You sit with it.\n\nNot because you're strong. Because you've practiced.\n\nFreedom is a presence, not an absence. It's the presence of yourself — fully, without the need for chemical management of your experience.\n\n**You are not trying to arrive. You are learning to move in the right direction. And direction, maintained, is everything.**`,reflection:"What would freedom look like in your daily life — not as an abstract concept, but as a concrete reality?",activity:{title:"Define Your Freedom",steps:["Write: 'I am free when ___.' Complete it 10 times. Don't think too hard.","Look at your answers. What conditions appear repeatedly? Those are what freedom means for you.","Write: 'The version of me who is free is someone who ___.' Complete it 5 times.","Write one small, specific thing the free version of you does regularly that the current version doesn't.","Start doing that thing. Today."]},closer:"One more day. Tomorrow is not an ending. It's a measurement."}},
+  {day:30,pillar:"Freedom",pillarColor:"#2E4057",en:{title:"Day 30: Who You Are Now",opener:"Thirty days. You showed up. That matters more than you know.",lesson:`Thirty days ago, you opened this program.\n\nYou've been inside some of the most important questions a person can sit with: Who am I when I'm not performing? What patterns have been running my behavior? What structure supports me? What direction am I moving? Who's alongside me? What does freedom mean for me?\n\nThose questions don't get answered in 30 days. But the asking — done consistently, with honesty — changes something. It changes you.\n\n**You are not the same person who opened this on Day 1.**\n\nThe six pillars don't complete. They deepen. Identity, Clarity, Discipline, Purpose, Connection, Freedom — these are not destinations. They're directions you maintain.\n\nSome days you'll be fully in the work. Some days you'll lose ground. That's not failure — that's the shape of any real change over time.\n\n**Those who finish this guide and keep going are different from those who do it and stop. Keep going.**`,reflection:"Compare yourself now to Day 1. What's different? Not what you wish were different — what actually is.",activity:{title:"Day 30 Integration",steps:["Read your identity statement from Day 8. Write what you'd change or add today.","Read your North Star from Day 20. Does it still hold? Refine if needed.","Read what you're protecting from Day 22. More concrete now?","Write one commitment for the next 30 days — one thing you're continuing.","Write a message to the version of yourself on Day 1. Tell them what you know now."]},closer:"Thirty days done. The work isn't.  This guide gave you the map. If you want someone to walk it with you — that's what coaching is for. Ready to go deeper? Work with Jeremy Makundi: jeremymakundi.github.io"}}
+];
+
+const SYSTEM_PROMPT = `You are Toolbox — the AI guide inside the Sobriety Toolbox by FlipTheScript™, created by Jeremy Makundi, Founder of FlipTheScript™ and sobriety coach and alcohol educator based in Tanzania.
+
+You are speaking to anyone, regardless of gender or age. Speak directly. Straight coach voice. No clinical softness. No hedging.
+
+Philosophy: Educate. Equip. The decision is always theirs to make. Never push, guilt, diagnose, or prescribe.
+
+Your voice: Direct. No "I understand how you feel." No "white-knuckle." No "Real men." No "I know what you're going through." Sharp. Like someone who has done this work themselves.
+
+The 6 pillars: Identity, Clarity, Discipline, Purpose, Connection, Freedom.
+The program: 30 days. Streak-based. Self-directed inner work.
+
+Key truths: Alcohol is the door, not the house. Sober and free are not the same thing. The substitution trap is real. This is inner work — not therapy, not AA. The decision is always theirs.
+
+Respond in English.
+
+Never: diagnose, prescribe, give medical advice, encourage relapse, shame, or judge.
+Always: tell the truth, point to the relevant pillar, give one actionable idea.
+Keep it tight — 3-5 sentences unless complexity demands more.
+
+CRITICAL FORMATTING RULE: Never use markdown. No asterisks, no bold (**word**), no bullet points with -, no headers with #. Write in plain sentences and paragraphs only.`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LANDING PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function InstallBanner({ lang }) {
+  const [show, setShow] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    // Already installed as PWA — don't show
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    // Already dismissed
+    if (localStorage.getItem("st_install_dismissed")) return;
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    setIsIOS(ios);
+
+    if (ios) {
+      // Show iOS instructions after 2s
+      setTimeout(() => setShow(true), 2000);
+    } else {
+      // Listen for Android/Chrome install prompt
+      const handler = (e) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setTimeout(() => setShow(true), 2000);
+      };
+      window.addEventListener("beforeinstallprompt", handler);
+      return () => window.removeEventListener("beforeinstallprompt", handler);
+    }
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        localStorage.setItem("st_install_dismissed", "1");
+        setShow(false);
+      }
+    }
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem("st_install_dismissed", "1");
+    setDismissed(true);
+    setShow(false);
+  };
+
+  if (!show || dismissed) return null;
+
+  return (
+    React.createElement('div', { style: {
+      position:"fixed", bottom:0, left:0, right:0,
+      background:"#1A1814", borderTop:"2px solid #E8541A",
+      padding:"16px 20px 28px", zIndex:999,
+      fontFamily:"'Sora',sans-serif",
+      animation:"slideUp 0.4s ease",
+      maxWidth:480, margin:"0 auto",
+    },}
+      , React.createElement('style', null, `@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}`)
+
+      , React.createElement('div', { style: {display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10},}
+        , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10},}
+          , React.createElement('div', { style: {width:36,height:36,background:"#E8541A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+            , React.createElement(ToolboxIcon, { size: 20,})
+          )
+          , React.createElement('div', null
+            , React.createElement('div', { style: {fontSize:12,fontWeight:700,color:"#F0EBE3",letterSpacing:"0.04em"},}
+              , "Add to Home Screen"
+            )
+            , React.createElement('div', { style: {fontSize:10,color:"#9A9088",marginTop:2},}
+              , "Never lose your streak"
+            )
+          )
+        )
+        , React.createElement('button', { onClick: handleDismiss, style: {background:"none",border:"none",color:"#9A9088",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1},}, "×")
+      )
+
+      , isIOS ? (
+        React.createElement('div', { style: {background:"#0C0C0C",padding:"12px 14px",borderLeft:"3px solid #E8541A"},}
+          , React.createElement('div', { style: {fontSize:12,color:"#F0EBE3",lineHeight:1.7},}
+            , lang==="en"
+              ? React.createElement(React.Fragment, null, "Tap the "  , React.createElement('strong', { style: {color:"#E8541A"},}, "Share"), " button "  , React.createElement('span', { style: {fontSize:14},}, "⬆"), " at the bottom of your browser, then tap "         , React.createElement('strong', { style: {color:"#E8541A"},}, "\"Add to Home Screen\""   ))
+              : React.createElement(React.Fragment, null, "Bonyeza kitufe cha "   , React.createElement('strong', { style: {color:"#E8541A"},}, "Shiriki"), " " , React.createElement('span', { style: {fontSize:14},}, "⬆"), " chini ya kivinjari chako, kisha bonyeza "       , React.createElement('strong', { style: {color:"#E8541A"},}, "\"Ongeza kwenye Skrini ya Nyumbani\""    ))
+            
+          )
+        )
+      ) : (
+        React.createElement('button', { onClick: handleInstall, style: {
+          width:"100%", background:"#E8541A", color:"#fff", border:"none",
+          padding:"13px", fontSize:13, fontWeight:700, cursor:"pointer",
+          fontFamily:"Sora,sans-serif", letterSpacing:"0.05em",
+        },}
+          , "INSTALL APP — IT'S FREE"
+        )
+      )
+    )
+  );
+}
+
+function LandingPage({ onEnter, theme, setTheme }) {
+  const [visible, setVisible] = useState(false);
+  const [linesDone, setLinesDone] = useState(false);
+  const lang = "en";
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setVisible(true), 100);
+    const t2 = setTimeout(() => setLinesDone(true), 900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const copy = {
+    en: {
+      eyebrow:"30 DAYS · 6 PILLARS · YOUR DECISION",
+      hl1:"Change", hl2:"starts here.",
+      sub:"Self-directed inner work for anyone done outsourcing their potential.",
+      cta:"BEGIN THE GUIDE",
+      note:"Private. No account. For anyone.",
+      pillarsLabel:"THE 6 PILLARS",
+      quote:'"Alcohol should not be an option."',
+      stats:[{n:"30",l:"DAYS"},{n:"6",l:"PILLARS"},{n:"1",l:"DECISION"}],
+    },
+    sw: {
+      eyebrow:"SIKU 30 · NGUZO 6 · UAMUZI WAKO",
+      hl1:"Mabadiliko", hl2:"yanaanza hapa.",
+      sub:"Kazi ya ndani ya kujielekeza kwa mtu yeyote aliyechoka kukabidhi uwezo wake.",
+      cta:"ANZA MWONGOZO",
+      note:"Faragha. Bila akaunti. Bila mikutano. Bila lebo. Kwa mtu yeyote.",
+      pillarsLabel:"NGUZO 6",
+      quote:'"Pombe haipaswi kuwa chaguo."',
+      stats:[{n:"30",l:"SIKU"},{n:"6",l:"NGUZO"},{n:"1",l:"UAMUZI"}],
+    }
+  };
+  const c = copy[lang];
+
+  const landingCss = `
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap');
+    .lp { font-family:'Sora',sans-serif; background:#FAFAF8; color:#1A1814; min-height:100vh; max-width:480px; margin:0 auto; position:relative; overflow:hidden; }
+    .lp::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(232,84,26,0.08) 0%,transparent 70%),radial-gradient(ellipse 80% 60% at 50% 100%,rgba(232,84,26,0.04) 0%,transparent 70%); pointer-events:none; z-index:0; }
+    .lp::after { content:''; position:fixed; inset:0; background-image:repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,0,0,0.025) 39px,rgba(0,0,0,0.025) 40px); pointer-events:none; z-index:0; }
+    .lp-in { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; padding:0 28px; }
+    .fu { opacity:0; transform:translateY(20px); transition:opacity .7s ease,transform .7s ease; }
+    .fu.on { opacity:1; transform:translateY(0); }
+    .fi { opacity:0; transition:opacity .6s ease; }
+    .fi.on { opacity:1; }
+    .lp-hdr { display:flex; align-items:center; justify-content:space-between; padding:24px 0 0; border-bottom:1px solid #E8E4DE; padding-bottom:16px; }
+    .ltog { background:none; border:1px solid #D0CBC3; color:#7A756E; font-family:'Sora',sans-serif; font-size:10px; letter-spacing:.12em; padding:5px 12px; cursor:pointer; transition:all .2s; }
+    .ltog:hover { border-color:#E8541A; color:#E8541A; }
+    .logo-wrap { margin-top:52px; margin-bottom:36px; }
+    .logo-lock { display:flex; align-items:center; gap:14px; }
+    .logo-ic { width:54px; height:54px; background:${C.orange}; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .logo-t { font-size:13px; font-weight:700; letter-spacing:.14em; color:#1A1814; }
+    .logo-s { font-size:9px; font-weight:400; letter-spacing:.18em; color:${C.orange}; margin-top:4px; }
+    .ruled { width:0; height:1px; background:linear-gradient(90deg,#E8541A,transparent); transition:width .9s ease; margin-bottom:28px; }
+    .ruled.on { width:100%; }
+    .eyebrow { font-size:9px; letter-spacing:.22em; color:#E8541A; margin-bottom:16px; font-weight:600; }
+    .hl { font-family:'Lora',Georgia,serif; font-size:38px; font-weight:700; line-height:1.12; color:#0C0C0C; margin-bottom:8px; }
+    .hl em { font-style:italic; font-weight:500; color:#E8541A; }
+    .sub { font-family:'Lora',Georgia,serif; font-size:15px; font-style:italic; color:#6B6560; line-height:1.75; margin-bottom:30px; }
+    .cta-btn { display:flex; width:100%; background:${C.orange}; color:#fff; border:none; font-family:'Sora',sans-serif; font-size:13px; font-weight:700; letter-spacing:.12em; padding:18px 22px; cursor:pointer; align-items:center; justify-content:space-between; transition:background .2s; position:relative; overflow:hidden; }
+    .cta-btn::before { content:''; position:absolute; left:0; top:0; width:3px; height:100%; background:rgba(255,255,255,.28); }
+    .cta-btn:hover { background:${C.og2}; }
+    .cta-arr { font-size:20px; transition:transform .2s; }
+    .cta-btn:hover .cta-arr { transform:translateX(5px); }
+    .cta-note { font-size:11px; color:#A09890; margin-top:12px; letter-spacing:.06em; }
+    .pl-label { font-size:9px; letter-spacing:.18em; color:#A09890; margin-bottom:10px; }
+    .pl-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:36px; }
+    .pc { font-size:10px; letter-spacing:.08em; color:#6B6560; border:1px solid #D8D4CE; padding:5px 10px; opacity:0; transform:translateY(8px); transition:opacity .4s ease,transform .4s ease,border-color .2s,color .2s; }
+    .pc.on { opacity:1; transform:translateY(0); }
+    .pc:hover { border-color:#E8541A99; color:#E8541A; }
+    .stats { display:flex; border:1px solid #D8D4CE; margin-bottom:32px; }
+    .sc { flex:1; padding:16px 14px; border-right:1px solid #D8D4CE; text-align:center; }
+    .sc:last-child { border-right:none; }
+    .sn { font-size:22px; font-weight:700; color:#E8541A; line-height:1; margin-bottom:4px; }
+    .sl { font-size:9px; letter-spacing:.12em; color:#A09890; }
+    .phil { border-top:1px solid #D8D4CE; padding:20px 0; margin-bottom:28px; }
+    .phil-t { font-family:'Lora',Georgia,serif; font-size:16px; font-style:italic; color:#0C0C0C; font-weight:600; line-height:1.8; }
+    .phil-a { font-size:10px; letter-spacing:.12em; color:#A09890; margin-top:8px; }
+    .lp-ft { padding:0 0 32px; border-top:1px solid #E8E4DE; padding-top:16px; display:flex; align-items:center; justify-content:space-between; }
+    .ft-br { font-size:9px; letter-spacing:.14em; color:#A09890; }
+    .ft-ic { width:28px; height:28px; background:${C.orange}; display:flex; align-items:center; justify-content:center; }
+  `;
+
+  return (
+    React.createElement('div', { className: "lp",}
+      , React.createElement('style', null, landingCss)
+      , React.createElement('div', { className: "lp-in",}
+        , React.createElement('div', { className: `lp-hdr fi ${visible?"on":""}`,}
+          , React.createElement('div', { style: {fontSize:9,letterSpacing:"0.2em",color:"#A09890"},}, "SOBRIETY TOOLBOX" )
+
+        )
+
+        , React.createElement('div', { className: `logo-wrap fu ${visible?"on":""}`, style: {transitionDelay:".1s"},}
+          , React.createElement('div', { className: "logo-lock",}
+            , React.createElement('div', { className: "logo-ic",}, React.createElement(ToolboxIcon, { size: 30,}))
+            , React.createElement('div', null
+              , React.createElement('div', { className: "logo-t",}, "SOBRIETY TOOLBOX" )
+              , React.createElement('div', { className: "logo-s",}, "BY FLIPTHESCRIPT™" )
+            )
+          )
+        )
+
+        , React.createElement('div', { className: `ruled ${linesDone?"on":""}`,})
+
+        , React.createElement('div', { className: `fu ${visible?"on":""}`, style: {transitionDelay:".25s"},}
+          , React.createElement('div', { className: "eyebrow",}, c.eyebrow)
+          , React.createElement('h1', { className: "hl",}, c.hl1, React.createElement('br', null), React.createElement('em', null, c.hl2))
+          , React.createElement('p', { className: "sub",}, c.sub)
+        )
+
+        , React.createElement('div', { className: `fu ${visible?"on":""}`, style: {transitionDelay:".4s",marginBottom:36},}
+          , React.createElement('button', { className: "cta-btn", onClick: onEnter,}
+            , React.createElement('span', null, c.cta)
+            , React.createElement('span', { className: "cta-arr",}, "→")
+          )
+          , React.createElement('p', { className: "cta-note",}, c.note)
+        )
+
+        , React.createElement('div', { className: `fu ${visible?"on":""}`, style: {transitionDelay:".45s",marginBottom:28},}
+          , React.createElement('div', { style: {fontSize:9,letterSpacing:"0.18em",color:"#A09890",marginBottom:10},}
+            , "CHOOSE YOUR EXPERIENCE"
+          )
+          , React.createElement('div', { style: {display:"flex",gap:10},}
+            , [
+              {id:"dark",label:"Dark",desc:"Focused. Night-friendly.",bg:"#0C0C0C",fg:"#F0EBE3",accent:"#E8541A"},
+              {id:"light",label:"Light",desc:"Clean. Easy on the eye.",bg:"#FAFAF8",fg:"#1A1814",accent:"#E8541A"},
+            ].map(opt=>(
+              React.createElement('div', { key: opt.id,
+                onClick: ()=>setTheme(opt.id),
+                style: {
+                  flex:1, padding:"14px 12px", cursor:"pointer",
+                  background:opt.bg, border:`2px solid ${theme===opt.id?"#E8541A":"#D8D2CA"}`,
+                  transition:"border-color .2s",
+                  display:"flex",flexDirection:"column",gap:6,
+                },}
+                , React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"space-between"},}
+                  , React.createElement('span', { style: {fontSize:13,fontWeight:700,color:opt.fg,letterSpacing:"0.04em"},}, opt.label)
+                  , React.createElement('div', { style: {width:14,height:14,borderRadius:"50%",border:`2px solid ${theme===opt.id?"#E8541A":"#ccc"}`,background:theme===opt.id?"#E8541A":"transparent",transition:"all .15s"},})
+                )
+                , React.createElement('span', { style: {fontSize:10,color:theme===opt.id?"#E8541A":"#9A9088",letterSpacing:"0.06em"},}, opt.desc)
+              )
+            ))
+          )
+        )
+
+        , React.createElement('div', { className: `fu ${visible?"on":""}`, style: {transitionDelay:".5s"},}
+          , React.createElement('div', { className: "pl-label",}, c.pillarsLabel)
+          , React.createElement('div', { className: "pl-row",}
+            , PILLARS.map((p,i)=>(
+              React.createElement('div', { key: p, className: `pc ${linesDone?"on":""}`, style: {transitionDelay:`${.55+i*.07}s`},}
+                , p.toUpperCase()
+              )
+            ))
+          )
+        )
+
+        , React.createElement('div', { className: `stats fu ${visible?"on":""}`, style: {transitionDelay:".6s"},}
+          , c.stats.map(s=>(
+            React.createElement('div', { key: s.l, className: "sc",}
+              , React.createElement('div', { className: "sn",}, s.n)
+              , React.createElement('div', { className: "sl",}, s.l)
+            )
+          ))
+        )
+
+        , React.createElement('div', { className: `phil fu ${visible?"on":""}`, style: {transitionDelay:".7s"},}
+          , React.createElement('p', { className: "phil-t",}, c.quote)
+          , React.createElement('p', { className: "phil-a",}, "— FLIPTHESCRIPT™" )
+        )
+
+        , React.createElement('div', { className: `lp-ft fi ${visible?"on":""}`, style: {transitionDelay:".85s"},}
+          , React.createElement('span', { className: "ft-br",}, "FLIPTHESCRIPT™")
+          , React.createElement('div', { className: "ft-ic",}, React.createElement(ToolboxIcon, { size: 16,}))
+        )
+      )
+
+      , React.createElement(InstallBanner, { lang: lang,})
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INSTALL NUDGE — shown on Home after Day 3 streak
+// ─────────────────────────────────────────────────────────────────────────────
+function InstallNudge({ lang, C, streak }) {
+  const [show, setShow] = useState(true);
+  const [isIOS] = useState(() => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        localStorage.setItem("st_install_dismissed", "1");
+        setShow(false);
+      }
+    }
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem("st_install_dismissed", "1");
+    setShow(false);
+  };
+
+  if (!show) return null;
+
+  return (
+    React.createElement('div', { style: {
+      background:C.s1, border:`1px solid ${C.orange}44`,
+      borderLeft:`3px solid ${C.orange}`,
+      padding:"14px 16px", marginBottom:20,
+      display:"flex", alignItems:"flex-start", gap:12,
+    },}
+      , React.createElement('div', { style: {fontSize:20, flexShrink:0},}, "📲")
+      , React.createElement('div', { style: {flex:1},}
+        , React.createElement('div', { style: {fontSize:12, fontWeight:700, color:C.text, marginBottom:4},}
+          , `You're on a ${streak}-day streak. Don't lose it.`
+        )
+        , React.createElement('div', { style: {fontSize:11, color:C.mid, lineHeight:1.6, marginBottom:10},}
+          , isIOS
+            ? (lang==="en"
+                ? React.createElement(React.Fragment, null, "Tap " , React.createElement('strong', { style: {color:C.orange},}, "Share ⬆" ), " then "  , React.createElement('strong', { style: {color:C.orange},}, "\"Add to Home Screen\""   ), " so the app is always one tap away."        )
+                : React.createElement(React.Fragment, null, "Bonyeza " , React.createElement('strong', { style: {color:C.orange},}, "Shiriki ⬆" ), " kisha "  , React.createElement('strong', { style: {color:C.orange},}, "\"Ongeza kwenye Skrini ya Nyumbani\""    ), " ili programu iwe jibu moja kila wakati."       ))
+            : ("Install the app so it's always one tap away — no browser needed.")
+          
+        )
+        , React.createElement('div', { style: {display:"flex", gap:8},}
+          , !isIOS && (
+            React.createElement('button', { onClick: handleInstall, style: {
+              background:C.orange, color:"#fff", border:"none",
+              padding:"8px 14px", fontSize:11, fontWeight:700,
+              cursor:"pointer", fontFamily:"Sora,sans-serif", letterSpacing:"0.04em",
+            },}
+              , "INSTALL NOW"
+            )
+          )
+          , React.createElement('button', { onClick: handleDismiss, style: {
+            background:"transparent", color:C.dim, border:`1px solid ${C.border}`,
+            padding:"8px 14px", fontSize:11, cursor:"pointer", fontFamily:"Sora,sans-serif",
+          },}
+            , "Not now"
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN APP
+// ─────────────────────────────────────────────────────────────────────────────
+function App({ lang, dayData, setDayData, streak, setStreak, onBackToLanding, theme }) {
+  const C = theme === "light" ? LIGHT_C : DARK_C;
+  const [tab, setTab] = useState("home");
+  const [activeDay, setActiveDay] = useState(null);
+  const [section, setSection] = useState("lesson");
+  const [journalText, setJournalText] = useState("");
+  const [reflections, setReflections] = useState({}); // dayNum -> text, persists in session
+  const [messages, setMessages] = useState([
+    {role:"assistant",content:"I'm Toolbox. 30 days, 6 pillars, straight answers. What do you need?"}
+  ]);
+  const [input, setInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [activeTool, setActiveTool] = useState(null);
+  const [breathePhase, setBreathePhase] = useState("idle");
+  const [breatheCount, setBreatheCount] = useState(0);
+  const [breatheCycles, setBreatheCycles] = useState(0);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryText, setSummaryText] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const breatheTimer = useRef(null);
+  const msgEnd = useRef(null);
+
+  useEffect(()=>{ _optionalChain([msgEnd, 'access', _ => _.current, 'optionalAccess', _2 => _2.scrollIntoView, 'call', _3 => _3({behavior:"smooth"})]); },[messages]);
+
+  const t = lang==="en" ? {
+    home:"Home",learn:"Guide",tools:"Tools",ask:"Ask",
+    day:"Day",lesson:"Read",reflect:"Reflect",activity:"Activity",
+    markDone:"Complete ✓",done:"Done ✓",streak:"Day Streak",
+    daysLeft:"days left",opener:"Today's Message",closer:"Carry Forward",
+    placeholder:"Ask anything...",send:"Send",thinking:"Thinking...",
+    toolsTitle:"Quick Tools",back:"Back",switchLang:"SW",
+  } : {
+    home:"Nyumbani",learn:"Mwongozo",tools:"Zana",ask:"Uliza",
+    day:"Siku",lesson:"Soma",reflect:"Tafakari",activity:"Shughuli",
+    markDone:"Kamilisha ✓",done:"Imekamilika ✓",streak:"Msururu wa Siku",
+    daysLeft:"siku zilizobaki",opener:"Ujumbe wa Leo",closer:"Beba Mbele",
+    placeholder:"Uliza chochote, kaka...",send:"Tuma",thinking:"Inafikiri...",
+    toolsTitle:"Zana za Haraka",back:"Rudi",switchLang:"EN",
+  };
+
+  const completedDays = Object.keys(dayData).filter(k=>dayData[k]).length;
+  const currentDay = Math.min(completedDays+1,30);
+  const day = activeDay ? DAYS[activeDay-1] : null;
+  const dl = day ? day[lang] : null;
+  const activeTab = (tab==="dayview")?"learn":tab;
+
+  // When activeDay changes, restore that day's saved reflection (session only)
+  useEffect(() => {
+    if (activeDay) {
+      setJournalText(reflections[activeDay] || "");
+    } else {
+      setJournalText("");
+    }
+  }, [activeDay]);
+
+  const saveReflection = (dayNum, text) => {
+    setReflections(prev => ({...prev, [dayNum]: text}));
+    setJournalText(text);
+  };
+
+  const completeDay = (d) => {
+    const nd = {...dayData,[d]:true};
+    setDayData(nd);
+    const ns = Math.min(streak+1,30);
+    setStreak(ns);
+    try { localStorage.setItem("st_days",JSON.stringify(nd)); localStorage.setItem("st_streak",JSON.stringify(ns)); } catch (e2) {}
+    if (Number(d) === 30) {
+      setActiveDay(null);
+      setTab("home");
+      setSummaryText("");
+      setSummaryLoading(true);
+      setShowSummary(true);
+      // Defer API call so state updates flush first
+      setTimeout(() => generateSummary(), 100);
+    }
+  };
+
+  const stripMarkdown = (text) =>
+    text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^[-*]\s+/gm, '• ')
+      .trim();
+
+  // Renders **text** as bold orange spans, preserves line breaks
+  const renderFormatted = (text, baseColor) => {
+    if (!text) return null;
+    return text.split('\n').map((line, li) => {
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      return (
+        React.createElement('span', { key: li,}
+          , parts.map((part, pi) =>
+            part.startsWith('**') && part.endsWith('**')
+              ? React.createElement('span', { key: pi, style: {fontWeight:700, color:'#E8541A'},}, part.slice(2,-2))
+              : React.createElement('span', { key: pi,}, part)
+          )
+          , li < text.split('\n').length - 1 && React.createElement('br', null)
+        )
+      );
+    });
+  };
+
+  const generateSummary = async () => {
+    const prompt = `You are Toolbox, the AI guide inside the Sobriety Toolbox by FlipTheScript™, created by Jeremy Makundi, Founder of FlipTheScript™ and sobriety coach and alcohol educator based in Tanzania.
+
+The user has just completed all 30 days of the Sobriety Toolbox guide. They worked through six pillars: Identity, Clarity, Discipline, Purpose, Connection, and Freedom.
+
+Generate a powerful, personal-feeling completion summary. Write it directly to them using "you".
+
+Structure it as:
+
+SOBRIETY TOOLBOX — YOUR 30-DAY SUMMARY
+
+One punchy opening paragraph (3-4 sentences) acknowledging what they just did. Direct. Not sentimental.
+
+Then one short paragraph per pillar (2-3 sentences each) — what the pillar was about and what shift it was designed to create.
+
+End with 2-3 sentences pointing them to work with Jeremy Makundi directly. Say that 30 days of self-work is the foundation, but 1-on-1 coaching is where the deeper change happens.
+
+Under 500 words total. No fluff. Direct honest voice. No clinical language.
+
+CRITICAL: Write in plain paragraphs only. No asterisks, no bold formatting, no markdown of any kind. No bullet points. Just clean prose.`;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:800,
+          messages:[{role:"user", content:prompt}]
+        })
+      });
+      const data = await res.json();
+      const raw = _optionalChain([data, 'access', _4 => _4.content, 'optionalAccess', _5 => _5.map, 'call', _6 => _6(b=>b.text||""), 'access', _7 => _7.join, 'call', _8 => _8("")])||"";
+      setSummaryText(raw || "30 days done. That's real. Work with Jeremy Makundi to go deeper: jeremymakundi.github.io");
+    } catch(e) {
+      setSummaryText("30 days done. That's real.\n\nYou worked through Identity, Clarity, Discipline, Purpose, Connection, and Freedom. That's not nothing.\n\nWork with Jeremy Makundi to go deeper: jeremymakundi.github.io");
+    }
+    setSummaryLoading(false);
+  };
+
+  const downloadSummary = () => {
+    const blob = new Blob([`SOBRIETY TOOLBOX — 30-DAY COMPLETION SUMMARY\nFlipTheScript™\n\n${summaryText}\n\n---\nReady to go deeper? Book a consultation with JM:\njeremymakundi.github.io`], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "sobriety-toolbox-summary.txt"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const sendMsg = async () => {
+    if (!input.trim()||aiLoading) return;
+    const um = {role:"user",content:input};
+    const next = [...messages,um];
+    setMessages(next); setInput(""); setAiLoading(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:SYSTEM_PROMPT,
+          messages:next.map(m=>({role:m.role,content:m.content}))})});
+      const data = await res.json();
+      setMessages([...next,{role:"assistant",content:_optionalChain([data, 'access', _9 => _9.content, 'optionalAccess', _10 => _10.map, 'call', _11 => _11(b=>b.text||""), 'access', _12 => _12.join, 'call', _13 => _13("")])||"Try again."}]);
+    } catch (e3) { setMessages([...next,{role:"assistant",content:"Connection issue. Try again."}]); }
+    setAiLoading(false);
+  };
+
+  const BPHASES = [
+    {key:"inhale",label:"Breathe In",dur:4,color:C.orange},
+    {key:"hold",label:"Hold",dur:7,color:"#8B6914"},
+    {key:"exhale",label:"Breathe Out",dur:8,color:"#1E6823"}
+  ];
+  useEffect(()=>{
+    if (breathePhase==="idle") return;
+    const pd = BPHASES.find(p=>p.key===breathePhase);
+    if (!pd) return;
+    if (breatheCount<=0) {
+      const idx = BPHASES.findIndex(p=>p.key===breathePhase);
+      const nx = BPHASES[(idx+1)%BPHASES.length];
+      if (idx===2) setBreatheCycles(c=>c+1);
+      setBreathePhase(nx.key); setBreatheCount(nx.dur); return;
+    }
+    breatheTimer.current = setTimeout(()=>setBreatheCount(c=>c-1),1000);
+    return ()=>clearTimeout(breatheTimer.current);
+  },[breathePhase,breatheCount]);
+  const bpd = BPHASES.find(p=>p.key===breathePhase);
+  const R=52, circ=2*Math.PI*R;
+  const bprog = bpd ? (bpd.dur-breatheCount)/bpd.dur : 0;
+
+  const icons = {
+    home:React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "20", height: "20",}, React.createElement('path', { d: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"                              ,})),
+    learn:React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "20", height: "20",}, React.createElement('rect', { x: "3", y: "4", width: "18", height: "16", rx: "1",}), React.createElement('line', { x1: "3", y1: "9", x2: "21", y2: "9",}), React.createElement('line', { x1: "9", y1: "4", x2: "9", y2: "9",})),
+    tools:React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "20", height: "20",}, React.createElement('circle', { cx: "12", cy: "12", r: "3",}), React.createElement('path', { d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"                                              ,})),
+    ask:React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "20", height: "20",}, React.createElement('path', { d: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"                   ,})),
+  };
+
+  const appCss = `
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Lora:ital,wght@0,500;0,600;1,400;1,500&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{background:${C.bg};}
+    .app{font-family:'Sora',sans-serif;background:${C.bg};color:${C.text};min-height:100vh;max-width:480px;margin:0 auto;}
+    .serif{font-family:'Lora',Georgia,serif;}
+    .fade{animation:fu .3s ease;}
+    @keyframes fu{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+    .tbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:${C.s1};border-top:1px solid ${C.border};display:flex;z-index:100;}
+    .tbn{flex:1;padding:10px 4px 8px;background:none;border:none;color:${C.dim};font-family:'Sora',sans-serif;font-size:10px;letter-spacing:0.04em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s;}
+    .tbn.on{color:${C.orange};}
+    .dcrd{background:${C.s1};border:1px solid ${C.border};padding:16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px;}
+    .dcrd:active{background:${C.s2};}
+    .dcrd.locked{opacity:.4;cursor:default;}
+    .ltab{flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:${C.dim};font-family:'Sora',sans-serif;font-size:11px;cursor:pointer;transition:all .15s;}
+    .ltab.on{color:${C.orange};border-bottom-color:${C.orange};}
+    .prose{font-family:'Lora',Georgia,serif;font-size:15px;line-height:1.9;color:${C.text};}
+    .prose p{margin-bottom:18px;}
+    .prose strong{font-weight:600;color:${C.proseBold};}
+    .step{background:${C.s2};border-left:3px solid ${C.orange};padding:14px 16px;margin-bottom:10px;font-size:13px;line-height:1.7;color:${C.stepText};}
+    .cu{background:${C.orange};color:#fff;padding:12px 16px;font-size:14px;line-height:1.6;max-width:82%;margin-left:auto;border-radius:14px 14px 2px 14px;}
+    .ca{background:${C.s1};border:1px solid ${C.border};color:${C.text};padding:12px 16px;font-size:14px;line-height:1.6;max-width:88%;border-radius:14px 14px 14px 2px;}
+    textarea{background:${C.s2};border:1px solid ${C.border};color:${C.text};font-family:'Sora',sans-serif;font-size:14px;padding:12px 14px;resize:none;outline:none;transition:border-color .2s;width:100%;}
+    textarea:focus{border-color:${C.orange}44;}
+    textarea::placeholder{color:${C.dim};}
+    ::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-thumb{background:${C.border};}
+    .pbtn{background:${C.orange};color:#fff;border:none;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif;width:100%;letter-spacing:.03em;}
+    .sbtn{background:${C.s2};color:${C.mid};border:1px solid ${C.border};padding:13px;font-size:13px;cursor:pointer;font-family:'Sora',sans-serif;width:100%;margin-top:10px;}
+    .gbtn{background:transparent;color:${C.orange};border:1px solid ${C.orange};padding:9px 20px;font-size:12px;cursor:pointer;font-family:'Sora',sans-serif;}
+    .bbtn{display:flex;align-items:center;gap:6px;background:none;border:none;color:${C.mid};font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;padding:0;margin-bottom:20px;}
+    .badge-g{display:inline-flex;align-items:center;gap:4px;background:${C.badgeBg};border:1px solid ${C.green};color:${C.badgeText};padding:3px 10px;font-size:11px;border-radius:20px;}
+  `;
+
+  // ── DAY 30 SUMMARY SCREEN ──
+  if (showSummary) {
+    return (
+      React.createElement('div', { style: {fontFamily:"'Sora',sans-serif",background:C.bg,color:C.text,minHeight:"100vh",maxWidth:480,margin:"0 auto",overflowY:"auto"},}
+        , React.createElement('style', null, `@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Lora:ital,wght@0,500;0,600;1,400;1,500&display=swap'); *{box-sizing:border-box;margin:0;padding:0;} @keyframes spin{to{transform:rotate(360deg)}}`)
+
+        , React.createElement('div', { style: {background:C.orange,padding:"36px 24px 28px"},}
+          , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.22em",color:"rgba(255,255,255,0.75)",marginBottom:10},}, "FLIPTHESCRIPT™")
+          , React.createElement('div', { style: {fontFamily:"'Lora',Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:8},}
+            , "30 Days Complete."
+          )
+          , React.createElement('div', { style: {fontSize:14,color:"rgba(255,255,255,0.85)"},}
+            , "You showed up. Every single day."
+          )
+        )
+
+        , React.createElement('div', { style: {padding:"28px 24px 60px"},}
+          , React.createElement('div', { style: {background:C.s1,border:`1px solid ${C.border}`,padding:20,marginBottom:20},}
+            , summaryLoading ? (
+              React.createElement('div', { style: {textAlign:"center",padding:"32px 0"},}
+                , React.createElement('div', { style: {width:36,height:36,border:`3px solid ${C.border}`,borderTop:`3px solid ${C.orange}`,borderRadius:"50%",animation:"spin 1s linear infinite",margin:"0 auto 14px"},})
+                , React.createElement('div', { style: {color:C.dim,fontSize:13,fontStyle:"italic"},}
+                  , "Generating your personal summary..."
+                )
+              )
+            ) : (
+              React.createElement('div', { style: {fontFamily:"'Lora',Georgia,serif",fontSize:14,lineHeight:1.9,color:C.text,whiteSpace:"pre-wrap"},}
+                , renderFormatted(summaryText)
+              )
+            )
+          )
+
+          , !summaryLoading && summaryText && (
+            React.createElement('button', { onClick: downloadSummary,
+              style: {width:"100%",background:"transparent",border:`1px solid ${C.border}`,color:C.mid,padding:"13px 16px",fontSize:13,cursor:"pointer",fontFamily:"Sora,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:24},}
+              , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "16", height: "16",}, React.createElement('path', { d: "M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"        ,}), React.createElement('polyline', { points: "7 10 12 15 17 10"     ,}), React.createElement('line', { x1: "12", y1: "15", x2: "12", y2: "3",}))
+              , "Download My Summary (.txt)"
+            )
+          )
+
+          , React.createElement('div', { style: {height:1,background:C.border,margin:"8px 0 28px"},})
+
+          , React.createElement('div', { style: {marginBottom:24},}
+            , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.18em",color:C.orange,marginBottom:12},}
+              , "WHAT COMES NEXT"
+            )
+            , React.createElement('div', { style: {fontFamily:"'Lora',Georgia,serif",fontSize:20,fontWeight:600,color:C.text,lineHeight:1.35,marginBottom:12},}
+              , "The guide gave you the map. Coaching walks it with you."
+            )
+            , React.createElement('div', { style: {fontSize:13,color:C.mid,lineHeight:1.75,marginBottom:20},}
+              , "30 days of self-directed work is the foundation. The next level is 1-on-1 coaching with Jeremy Makundi — Founder of FlipTheScript™, sobriety coach and alcohol educator — where the framework meets your specific life, your patterns, your next move."
+            )
+          )
+
+          , React.createElement('a', { href: "https://jeremymakundi.github.io", target: "_blank", rel: "noopener noreferrer" ,
+            style: {display:"block",background:C.orange,color:"#fff",padding:"16px 20px",textAlign:"center",textDecoration:"none",fontFamily:"Sora,sans-serif",fontWeight:700,fontSize:14,letterSpacing:"0.05em",marginBottom:12},}
+            , "BOOK A CONSULTATION WITH JEREMY →"
+          )
+
+          , React.createElement('button', { onClick: ()=>{setShowSummary(false);setTab("home");},
+            style: {width:"100%",background:"transparent",border:`1px solid ${C.border}`,color:C.mid,padding:"13px 16px",fontSize:13,cursor:"pointer",fontFamily:"Sora,sans-serif"},}
+            , "Return to the Guide"
+          )
+        )
+      )
+    );
+  }
+
+  return (
+    React.createElement('div', { className: "app",}
+      , React.createElement('style', null, appCss)
+
+      /* ── HOME ── */
+      , tab==="home" && (
+        React.createElement('div', { className: "fade", style: {padding:"24px 20px 100px"},}
+          , React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24},}
+            , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,cursor:"pointer"}, onClick: onBackToLanding,}
+              , React.createElement('div', { style: {background:C.orange,width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center"},}, React.createElement(ToolboxIcon, { size: 20,}))
+              , React.createElement('div', null
+                , React.createElement('div', { style: {fontSize:11,fontWeight:600,letterSpacing:"0.1em"},}, "SOBRIETY TOOLBOX" )
+                , React.createElement('div', { style: {fontSize:9,color:C.dim,letterSpacing:"0.1em"},}, "FLIPTHESCRIPT™")
+              )
+            )
+
+          )
+
+          /* ── PROGRESS RING HERO ── */
+          , (() => {
+            const pct = completedDays / 30;
+            const R = 54;
+            const CIRC = 2 * Math.PI * R;
+            const dash = pct * CIRC;
+            const gap = CIRC - dash;
+            // Pillar progress
+            const pillars = ["Identity","Clarity","Discipline","Purpose","Connection","Freedom"];
+            const pillarData = pillars.map(p => {
+              const days = DAYS.filter(d => d.pillar === p);
+              const done = days.filter(d => dayData[d.day]).length;
+              return { p, done, total: days.length, pct: done / days.length };
+            });
+            return (
+              React.createElement('div', { style: {marginBottom:24},}
+                /* Ring + stats row */
+                , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:20,background:C.s1,border:`1px solid ${C.border}`,padding:"20px 20px",marginBottom:16},}
+                  /* SVG Ring */
+                  , React.createElement('div', { style: {position:"relative",flexShrink:0},}
+                    , React.createElement('svg', { width: 130, height: 130, viewBox: "0 0 130 130"   ,}
+                      /* Track */
+                      , React.createElement('circle', { cx: "65", cy: "65", r: R, fill: "none", stroke: C.border, strokeWidth: "10",})
+                      /* Progress arc */
+                      , React.createElement('circle', { cx: "65", cy: "65", r: R, fill: "none",
+                        stroke: completedDays===30 ? "#6aaa7a" : C.orange,
+                        strokeWidth: "10",
+                        strokeLinecap: "round",
+                        strokeDasharray: `${dash} ${gap}`,
+                        strokeDashoffset: CIRC * 0.25,
+                        style: {transition:"stroke-dasharray 0.8s ease"},}
+                      )
+                      /* Centre text */
+                      , React.createElement('text', { x: "65", y: "58", textAnchor: "middle", fill: C.text, fontSize: "26", fontWeight: "700", fontFamily: "Sora,sans-serif",}, completedDays)
+                      , React.createElement('text', { x: "65", y: "74", textAnchor: "middle", fill: C.dim, fontSize: "10", fontFamily: "Sora,sans-serif",}, "OF 30" )
+                      , React.createElement('text', { x: "65", y: "88", textAnchor: "middle", fill: C.orange, fontSize: "9", fontFamily: "Sora,sans-serif", letterSpacing: "1",}, "DAYS")
+                    )
+                  )
+                  /* Stats */
+                  , React.createElement('div', { style: {flex:1},}
+                    , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.orange,marginBottom:6},}, t.streak.toUpperCase())
+                    , React.createElement('div', { style: {fontSize:36,fontWeight:700,lineHeight:1,marginBottom:2},}, streak)
+                    , React.createElement('div', { style: {fontSize:11,color:C.dim,marginBottom:14},}, "day streak")
+                    , React.createElement('div', { style: {fontSize:11,color:C.mid},}
+                      , completedDays===30
+                        ? ("Guide complete 🔓")
+                        : `${30-completedDays} ${t.daysLeft}`
+                    )
+                  )
+                )
+
+                /* Progress bar */
+                , React.createElement('div', { style: {marginBottom:4,display:"flex",justifyContent:"space-between",alignItems:"center"},}
+                  , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.12em",color:C.dim},}, "OVERALL PROGRESS"
+                  )
+                  , React.createElement('div', { style: {fontSize:11,color:C.orange,fontWeight:600},}, Math.round(pct*100), "%")
+                )
+                , React.createElement('div', { style: {height:6,background:C.border,borderRadius:3,overflow:"hidden",marginBottom:16},}
+                  , React.createElement('div', { style: {height:"100%",width:`${pct*100}%`,background:completedDays===30?"#6aaa7a":C.orange,borderRadius:3,transition:"width 0.8s ease"},})
+                )
+
+                /* Per-pillar mini bars */
+                , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:7},}
+                  , pillarData.map(({p,done,total,pct:pp})=>(
+                    React.createElement('div', { key: p, style: {display:"flex",alignItems:"center",gap:10},}
+                      , React.createElement('div', { style: {width:80,fontSize:10,color:C.dim,flexShrink:0},}, p.toUpperCase())
+                      , React.createElement('div', { style: {flex:1,height:4,background:C.border,borderRadius:2,overflow:"hidden"},}
+                        , React.createElement('div', { style: {height:"100%",width:`${pp*100}%`,background:pp===1?"#6aaa7a":C.orange,borderRadius:2,transition:"width 0.8s ease"},})
+                      )
+                      , React.createElement('div', { style: {width:28,fontSize:10,color:pp===1?"#6aaa7a":C.mid,textAlign:"right",flexShrink:0},}, done, "/", total)
+                    )
+                  ))
+                )
+              )
+            );
+          })()
+
+          /* ── INSTALL NUDGE — shows after Day 3 if not already installed ── */
+          , completedDays >= 3 && completedDays < 30 &&
+           !window.matchMedia("(display-mode: standalone)").matches &&
+           !localStorage.getItem("st_install_dismissed") && (
+            React.createElement(InstallNudge, { lang: lang, C: C, streak: streak,})
+          )
+
+          /* Today */
+          , currentDay<=30 && (
+            React.createElement('div', { style: {marginBottom:20},}
+              , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.dim,marginBottom:8},}, "TODAY")
+              , React.createElement('div', { className: "dcrd", style: {borderColor:`${C.orange}44`,borderLeft:`3px solid ${C.orange}`},
+                onClick: ()=>{setActiveDay(currentDay);setSection("lesson");setTab("dayview");},}
+                , React.createElement('div', { style: {width:44,height:44,background:C.orange,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+                  , React.createElement('span', { style: {fontSize:16,fontWeight:700,color:"#fff"},}, currentDay)
+                )
+                , React.createElement('div', { style: {flex:1},}
+                  , React.createElement('div', { style: {fontSize:10,color:C.mid,marginBottom:2},}, _optionalChain([DAYS, 'access', _14 => _14[currentDay-1], 'optionalAccess', _15 => _15.pillar]))
+                  , React.createElement('div', { style: {fontSize:15,fontWeight:600},}, _optionalChain([DAYS, 'access', _16 => _16[currentDay-1], 'optionalAccess', _17 => _17[lang], 'optionalAccess', _18 => _18.title]))
+                )
+                , React.createElement('span', { style: {color:C.dim,fontSize:18},}, "›")
+              )
+            )
+          )
+
+          , completedDays===30 && (
+            React.createElement('div', { style: {background:"#0A1A0C",border:`1px solid ${C.green}`,padding:"20px",marginBottom:20,textAlign:"center"},}
+              , React.createElement('div', { style: {fontSize:24,marginBottom:8},}, "🔓")
+              , React.createElement('div', { className: "serif", style: {fontSize:18,color:"#6aaa7a",marginBottom:6},}, "30 Days Complete")
+              , React.createElement('div', { style: {fontSize:13,color:C.mid,marginBottom:14},}, "The work continues.")
+              , React.createElement('button', { className: "pbtn", onClick: ()=>{
+                setSummaryText("");
+                setSummaryLoading(true);
+                setShowSummary(true);
+                setTimeout(()=>generateSummary(), 100);
+              },}
+                , "View My 30-Day Summary →"
+              )
+            )
+          )
+
+          , React.createElement('div', { style: {background:C.s1,border:`1px solid ${C.border}`,padding:"18px",marginBottom:20},}
+            , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.orange,marginBottom:8},}, "THE PHILOSOPHY" )
+            , React.createElement('p', { className: "serif", style: {fontSize:14,lineHeight:1.8,color:C.mid,fontStyle:"italic"},}
+              , '"Alcohol should not be an option."'
+            )
+          )
+
+        )
+      )
+
+      /* ── PROGRAM ── */
+      , tab==="learn" && (
+        React.createElement('div', { className: "fade", style: {padding:"24px 20px 100px"},}
+          , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.orange,marginBottom:4},}, "30-DAY SOBRIETY GUIDE")
+          , React.createElement('h2', { className: "serif", style: {fontSize:22,marginBottom:20},}, "30-Day Sobriety Guide")
+          , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:8},}
+            , DAYS.map(d=>{
+              const done=!!dayData[d.day];
+              const locked=d.day>currentDay;
+              return (
+                React.createElement('div', { key: d.day, className: `dcrd${locked?" locked":""}`,
+                  onClick: ()=>{if(!locked){setActiveDay(d.day);setSection("lesson");setTab("dayview");}},}
+                  , React.createElement('div', { style: {width:40,height:40,background:done?C.badgeBg:locked?C.s2:C.s2,border:`1px solid ${done?C.green:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:done?14:13,color:done?"#6aaa7a":locked?C.dim:C.mid,fontWeight:done?700:400},}
+                    , done?"✓":d.day
+                  )
+                  , React.createElement('div', { style: {flex:1,minWidth:0},}
+                    , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,marginBottom:2},}
+                      , React.createElement('span', { style: {fontSize:10,color:PILLAR_COLORS[d.pillar]||C.dim},}, d.pillar.toUpperCase())
+                      , done&&React.createElement('span', { className: "badge-g",}, "✓")
+                    )
+                    , React.createElement('div', { style: {fontSize:14,fontWeight:600,color:locked?C.dim:C.text},}, d[lang].title)
+                  )
+                  , !locked&&React.createElement('span', { style: {color:C.dim,fontSize:16},}, "›")
+                  , locked&&React.createElement('span', { style: {color:C.dim,fontSize:14},}, "🔒")
+                )
+              );
+            })
+          )
+        )
+      )
+
+      /* ── DAY VIEW ── */
+      , tab==="dayview" && day && dl && (
+        React.createElement('div', { className: "fade", style: {padding:"20px 20px 100px"},}
+          , React.createElement('button', { className: "bbtn", onClick: ()=>setTab("learn"),}
+            , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "16", height: "16",}, React.createElement('path', { d: "M19 12H5M5 12l7 7M5 12l7-7"    ,}))
+            , t.back
+          )
+          , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12,marginBottom:16},}
+            , React.createElement('div', { style: {width:48,height:48,background:PILLAR_COLORS[day.pillar]||C.s2,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0},}
+              , React.createElement('div', { style: {fontSize:9,color:"rgba(255,255,255,.6)",letterSpacing:"0.1em"},}, t.day.toUpperCase())
+              , React.createElement('div', { style: {fontSize:20,fontWeight:700,color:"#fff",lineHeight:1},}, day.day)
+            )
+            , React.createElement('div', null
+              , React.createElement('div', { style: {fontSize:10,color:PILLAR_COLORS[day.pillar]||C.dim,letterSpacing:"0.1em",marginBottom:2},}, day.pillar.toUpperCase())
+              , React.createElement('h2', { className: "serif", style: {fontSize:19,lineHeight:1.2},}, dl.title)
+            )
+            , dayData[day.day]&&React.createElement('span', { className: "badge-g", style: {marginLeft:"auto"},}, "✓")
+          )
+          , React.createElement('div', { style: {display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:20},}
+            , ["lesson","reflect","activity"].map(s=>(
+              React.createElement('button', { key: s, className: `ltab${section===s?" on":""}`, onClick: ()=>setSection(s),}
+                , t[s]
+              )
+            ))
+          )
+
+          , section==="lesson" && (
+            React.createElement('div', null
+              , React.createElement('div', { style: {background:C.s2,borderLeft:`3px solid ${PILLAR_COLORS[day.pillar]||C.orange}`,padding:"14px 16px",marginBottom:20},}
+                , React.createElement('div', { style: {fontSize:10,color:C.mid,letterSpacing:"0.1em",marginBottom:6},}, t.opener.toUpperCase())
+                , React.createElement('p', { className: "serif", style: {fontSize:14,lineHeight:1.7,fontStyle:"italic"},}, dl.opener)
+              )
+              , React.createElement('div', { className: "prose",}
+                , dl.lesson.split("\n\n").map((p,i)=>(
+                  React.createElement('p', { key: i, dangerouslySetInnerHTML: {__html:p.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")},})
+                ))
+              )
+              , React.createElement('button', { className: "pbtn", style: {marginTop:24}, onClick: ()=>setSection("reflect"),}
+                , "Reflect →"
+              )
+            )
+          )
+
+          , section==="reflect" && (
+            React.createElement('div', null
+              , React.createElement('div', { style: {background:C.s2,border:`1px solid ${C.border}`,padding:"18px",marginBottom:16},}
+                , React.createElement('p', { className: "serif", style: {fontSize:15,lineHeight:1.8,fontStyle:"italic"},}, "\"", dl.reflection, "\"")
+              )
+              , React.createElement('p', { style: {fontSize:12,color:C.dim,marginBottom:12},}, "Private. Clears when you leave.")
+              , React.createElement('textarea', { value: journalText, onChange: e=>saveReflection(activeDay, e.target.value),
+                placeholder: "Write honestly...", rows: 8,})
+              , React.createElement('button', { className: "pbtn", style: {marginTop:12}, onClick: ()=>setSection("activity"),}
+                , "Continue to Activity →"
+              )
+            )
+          )
+
+          , section==="activity" && (
+            React.createElement('div', null
+              , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.orange,marginBottom:6},}
+                , "TODAY'S ACTIVITY"
+              )
+              , React.createElement('h3', { className: "serif", style: {fontSize:18,marginBottom:16},}, dl.activity.title)
+              , dl.activity.steps.map((s,i)=>(
+                React.createElement('div', { key: i, className: "step",}
+                  , React.createElement('div', { style: {fontSize:10,color:C.orange,marginBottom:4,letterSpacing:"0.1em"},}, "STEP 0" , i+1)
+                  , s
+                )
+              ))
+              , React.createElement('div', { style: {background:C.s1,borderLeft:`3px solid ${PILLAR_COLORS[day.pillar]||C.orange}`,padding:"14px 16px",margin:"20px 0"},}
+                , React.createElement('div', { style: {fontSize:10,color:C.mid,letterSpacing:"0.1em",marginBottom:6},}, t.closer.toUpperCase())
+                , React.createElement('p', { className: "serif", style: {fontSize:13,lineHeight:1.7,fontStyle:"italic",color:C.mid},}, dl.closer)
+              )
+              , React.createElement('div', { style: {background:C.s1,border:`1px solid ${C.border}`,padding:"14px",marginBottom:20},}
+                , React.createElement('p', { style: {fontSize:12,color:C.mid,marginBottom:8},}, "Stuck? Ask Toolbox.")
+                , React.createElement('button', { className: "gbtn", onClick: ()=>setTab("ask"),}, "Ask Toolbox →")
+              )
+              , !dayData[day.day] ? (
+                React.createElement('button', { className: "pbtn", onClick: ()=>{
+                  completeDay(day.day);
+                  if (Number(day.day) !== 30) setTab("learn");
+                },}
+                  , t.markDone
+                )
+              ) : (
+                React.createElement('div', { style: {textAlign:"center",padding:"12px 0"},}
+                  , React.createElement('span', { className: "badge-g", style: {fontSize:13,padding:"6px 16px"},}, "✓ " , t.done)
+                  , day.day < 30 ? (
+                    React.createElement('button', { className: "sbtn", onClick: ()=>{setActiveDay(day.day+1);setSection("lesson");},}
+                      , `Day ${day.day+1} →`
+                    )
+                  ) : (
+                    React.createElement(React.Fragment, null
+                      , React.createElement('button', { className: "pbtn", style: {marginTop:12}, onClick: ()=>{
+                        setSummaryText("");
+                        setSummaryLoading(true);
+                        setShowSummary(true);
+                        setTimeout(()=>generateSummary(), 100);
+                      },}
+                        , "View My 30-Day Summary →"
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+      /* ── TOOLS ── */
+      , tab==="tools" && (
+        React.createElement('div', { className: "fade", style: {padding:"24px 20px 100px"},}
+          , !activeTool ? (
+            React.createElement(React.Fragment, null
+              , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.orange,marginBottom:4},}, "QUICK TOOLS" )
+              , React.createElement('h2', { className: "serif", style: {fontSize:22,marginBottom:20},}, t.toolsTitle)
+              , [
+                {key:"breathe",e:"💨",title:"4-7-8 Breathing",sub:"For when urges hit"},
+                {key:"journal",e:"📝",title:"Reflection Journal",sub:"Private. Never saved."},
+              ].map(tool=>(
+                React.createElement('div', { key: tool.key, style: {background:C.s1,border:`1px solid ${C.border}`,padding:"18px",cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",gap:14},
+                  onClick: ()=>setActiveTool(tool.key),}
+                  , React.createElement('span', { style: {fontSize:26},}, tool.e)
+                  , React.createElement('div', { style: {flex:1},}
+                    , React.createElement('div', { style: {fontSize:15,fontWeight:600,marginBottom:2},}, tool.title)
+                    , React.createElement('div', { style: {fontSize:12,color:C.mid},}, tool.sub)
+                  )
+                  , React.createElement('span', { style: {color:C.dim,fontSize:18},}, "›")
+                )
+              ))
+            )
+          ) : (
+            React.createElement(React.Fragment, null
+              , React.createElement('button', { className: "bbtn", onClick: ()=>setActiveTool(null),}
+                , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", width: "16", height: "16",}, React.createElement('path', { d: "M19 12H5M5 12l7 7M5 12l7-7"    ,}))
+                , t.back
+              )
+              , activeTool==="breathe" && (
+                React.createElement('div', null
+                  , React.createElement('h3', { className: "serif", style: {fontSize:20,marginBottom:16},}, "4-7-8 Breathing")
+                  , React.createElement('p', { style: {fontSize:13,color:C.mid,marginBottom:20,lineHeight:1.6},}
+                    , "Activates your parasympathetic nervous system. Use when an urge hits."
+                  )
+                  , breathePhase==="idle" ? (
+                    React.createElement('div', { style: {textAlign:"center"},}
+                      , React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:28,marginBottom:28},}
+                        , BPHASES.map(p=>(
+                          React.createElement('div', { key: p.key, style: {textAlign:"center"},}
+                            , React.createElement('div', { style: {fontSize:24,fontWeight:700,color:p.color},}, p.dur, "s")
+                            , React.createElement('div', { style: {fontSize:11,color:C.dim},}, p.label)
+                          )
+                        ))
+                      )
+                      , React.createElement('button', { onClick: ()=>{setBreathePhase("inhale");setBreatheCount(4);setBreatheCycles(0);},
+                        style: {background:C.orange,color:"#fff",border:"none",padding:"12px 36px",fontSize:14,cursor:"pointer",fontFamily:"Sora,sans-serif",fontWeight:600},}
+                        , "Begin"
+                      )
+                    )
+                  ) : (
+                    React.createElement('div', { style: {textAlign:"center"},}
+                      , React.createElement('div', { style: {position:"relative",width:140,height:140,margin:"0 auto 20px"},}
+                        , React.createElement('svg', { width: "140", height: "140", viewBox: "0 0 140 140"   ,}
+                          , React.createElement('circle', { cx: "70", cy: "70", r: R, fill: "none", stroke: C.border, strokeWidth: "5",})
+                          , React.createElement('circle', { cx: "70", cy: "70", r: R, fill: "none", stroke: _optionalChain([bpd, 'optionalAccess', _19 => _19.color])||C.orange, strokeWidth: "5", strokeLinecap: "round",
+                            strokeDasharray: circ, strokeDashoffset: circ*(1-bprog),
+                            style: {transform:"rotate(-90deg)",transformOrigin:"center",transition:"stroke-dashoffset 1s linear"},})
+                        )
+                        , React.createElement('div', { style: {position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"},}
+                          , React.createElement('span', { style: {fontSize:36,fontWeight:700},}, breatheCount)
+                          , React.createElement('span', { style: {fontSize:11,color:_optionalChain([bpd, 'optionalAccess', _20 => _20.color]),letterSpacing:"0.1em",textTransform:"uppercase"},}, _optionalChain([bpd, 'optionalAccess', _21 => _21.label]))
+                        )
+                      )
+                      , React.createElement('p', { style: {color:C.dim,fontSize:12,marginBottom:12},}, `Cycles: ${breatheCycles}`)
+                      , React.createElement('button', { onClick: ()=>{setBreathePhase("idle");clearTimeout(breatheTimer.current);},
+                        style: {background:"transparent",color:C.mid,border:`1px solid ${C.border}`,padding:"8px 20px",fontSize:12,cursor:"pointer",fontFamily:"Sora,sans-serif"},}
+                        , "Stop"
+                      )
+                    )
+                  )
+                )
+              )
+              , activeTool==="journal" && (
+                React.createElement('div', null
+                  , React.createElement('h3', { className: "serif", style: {fontSize:20,marginBottom:8},}, "Reflection Journal")
+                  , React.createElement('p', { style: {fontSize:12,color:C.dim,marginBottom:16},}, "Write freely. Clears when you leave.")
+                  , React.createElement('textarea', { value: journalText, onChange: e=>saveReflection(activeDay, e.target.value),
+                    placeholder: "Start writing...", rows: 14,})
+                )
+              )
+            )
+          )
+        )
+      )
+
+      /* ── ASK (TOOLBOX AI) ── */
+      , tab==="ask" && (
+        React.createElement('div', { className: "fade", style: {display:"flex",flexDirection:"column",height:"100vh",padding:"20px 20px 0"},}
+          , React.createElement('div', { style: {marginBottom:14},}
+            , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,marginBottom:4},}
+              , React.createElement('div', { style: {width:28,height:28,background:C.orange,display:"flex",alignItems:"center",justifyContent:"center"},}, React.createElement(ToolboxIcon, { size: 16,}))
+              , React.createElement('div', null
+                , React.createElement('div', { style: {fontSize:10,letterSpacing:"0.15em",color:C.orange},}, "AI GUIDE" )
+                , React.createElement('h2', { className: "serif", style: {fontSize:18},}, "Toolbox")
+              )
+            )
+            , React.createElement('p', { style: {fontSize:12,color:C.mid},}, "Straight answers. No fluff.")
+          )
+          , React.createElement('div', { style: {flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:14,paddingBottom:16},}
+            , messages.map((m,i)=>(
+              React.createElement('div', { key: i, style: {display:"flex",alignItems:"flex-end",gap:8,justifyContent:m.role==="user"?"flex-end":"flex-start"},}
+                , m.role==="assistant"&&(
+                  React.createElement('div', { style: {width:26,height:26,background:C.orange,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}, React.createElement(ToolboxIcon, { size: 14,}))
+                )
+                , React.createElement('div', { className: m.role==="user"?"cu":"ca",}, m.role==="assistant" ? renderFormatted(m.content) : m.content)
+              )
+            ))
+            , aiLoading&&(
+              React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8},}
+                , React.createElement('div', { style: {width:26,height:26,background:C.s1,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center"},}, React.createElement(ToolboxIcon, { size: 14,}))
+                , React.createElement('span', { style: {color:C.dim,fontSize:13,fontStyle:"italic"},}, t.thinking)
+              )
+            )
+            , React.createElement('div', { ref: msgEnd,})
+          )
+          , React.createElement('div', { style: {borderTop:`1px solid ${C.border}`,paddingTop:10,paddingBottom:90,display:"flex",gap:8},}
+            , React.createElement('textarea', { rows: 2, placeholder: t.placeholder, value: input, onChange: e=>setInput(e.target.value),
+              onKeyDown: e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}},})
+            , React.createElement('button', { onClick: sendMsg, disabled: aiLoading,
+              style: {background:C.orange,color:"#fff",border:"none",padding:"0 16px",fontSize:13,fontWeight:600,cursor:"pointer",opacity:aiLoading?.5:1,flexShrink:0,fontFamily:"Sora,sans-serif"},}
+              , t.send
+            )
+          )
+        )
+      )
+
+      /* TAB BAR */
+      , React.createElement('nav', { className: "tbar",}
+        , [{k:"home",l:t.home},{k:"learn",l:t.learn},{k:"tools",l:t.tools},{k:"ask",l:t.ask}].map(item=>(
+          React.createElement('button', { key: item.k, className: `tbn${activeTab===item.k?" on":""}`,
+            onClick: ()=>{setTab(item.k);if(item.k!=="dayview")setActiveDay(null);},}
+            , icons[item.k]
+            , item.l
+          )
+        ))
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOT — Landing + transition into App
+// ─────────────────────────────────────────────────────────────────────────────
+function Root() {
+  const DATA_VERSION = "v1";
+  const [dayData, setDayData] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("st_days")||"{}");
+      const ver = localStorage.getItem("st_version");
+      if (ver !== DATA_VERSION) localStorage.setItem("st_version", DATA_VERSION);
+      return saved;
+    } catch (e4) { return {}; }
+  });
+  const [streak, setStreak] = useState(() => {
+    try { return parseInt(localStorage.getItem("st_streak")||"0"); } catch (e5) { return 0; }
+  });
+
+  // If user has started (any day saved), go straight to app — no landing page
+  const hasStarted = Object.keys(dayData).length > 0 || !!localStorage.getItem("st_started");
+
+  const [screen, setScreen] = useState(hasStarted ? "app" : "landing");
+  const lang = "en";
+  const [theme, setTheme] = useState(() => localStorage.getItem("st_theme") || "dark");
+
+  // Persist lang + theme choices
+  const setLangP = () => {};
+  const setThemeP = (v) => { setTheme(v); try { localStorage.setItem("st_theme", v); } catch (e6) {} };
+
+  const handleEnter = () => {
+    try { localStorage.setItem("st_started", "1"); } catch (e7) {}
+    setScreen("entering");
+    setTimeout(() => setScreen("app"), 600);
+  };
+
+  const appBg = theme === "light" ? "#FAFAF8" : "#0C0C0C";
+
+  const rootCss = `
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #FAFAF8; overscroll-behavior: none; }
+    .entering { animation: slide-out .5s ease forwards; }
+    .app-enter { animation: slide-in .5s ease forwards; }
+    @keyframes slide-out { from{opacity:1;transform:translateY(0);} to{opacity:0;transform:translateY(-24px);} }
+    @keyframes slide-in { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+  `;
+
+  return (
+    React.createElement(React.Fragment, null
+      , React.createElement('style', null, rootCss)
+      , screen === "landing" && React.createElement(LandingPage, { onEnter: handleEnter, theme: theme, setTheme: setThemeP,} )
+      , screen === "entering" && (
+        React.createElement('div', { className: "entering",}
+          , React.createElement(LandingPage, { onEnter: ()=>{}, theme: theme, setTheme: setThemeP,} )
+        )
+      )
+      , screen === "app" && (
+        React.createElement('div', { className: hasStarted ? "" : "app-enter", style: {background:appBg},}
+          , React.createElement(App, { lang: lang, dayData: dayData, setDayData: setDayData, streak: streak, setStreak: setStreak, onBackToLanding: ()=>setScreen("landing"), theme: theme,} )
+        )
+      )
+    )
+  );
+}
+  
+
+  // Mount
+  const container = document.getElementById('root');
+  const reactRoot = ReactDOM.createRoot(container);
+  reactRoot.render(React.createElement(Root, null));
+</script>
+
+</body>
+</html>
